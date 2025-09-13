@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ApplicationExpection = void 0;
+exports.ValidationError = exports.ApplicationExpection = void 0;
 class ApplicationExpection extends Error {
     statusCode;
     constructor(msg, statusCode, options) {
@@ -9,3 +9,9 @@ class ApplicationExpection extends Error {
     }
 }
 exports.ApplicationExpection = ApplicationExpection;
+class ValidationError extends ApplicationExpection {
+    constructor(msg) {
+        super(msg, 422);
+    }
+}
+exports.ValidationError = ValidationError;

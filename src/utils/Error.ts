@@ -6,3 +6,9 @@ export class ApplicationExpection extends Error {
     this.statusCode = statusCode;
   }
 }
+
+export class ValidationError extends ApplicationExpection {
+  constructor(msg: string) {
+    super(msg, 422);
+  }
+}
