@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.validation = void 0;
-const Error_1 = require("../utils/Error");
+const Errors_1 = require("../utils/Errors");
 const validation = (shcema) => {
     return (req, res, next) => {
         const data = {
@@ -19,8 +19,7 @@ const validation = (shcema) => {
             for (let item of issues) {
                 messages += item.message + " \n ";
             }
-            console.log(messages);
-            throw new Error_1.ValidationError(messages);
+            throw new Errors_1.ValidationError(messages, 400);
         }
     };
 };

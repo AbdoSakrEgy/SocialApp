@@ -1,33 +1,64 @@
+import { IUser, UserModel } from "./user.model";
 import { NextFunction, Request, Response } from "express";
-import { ApplicationExpection, ValidationError } from "../../utils/Error";
-import { signupSchema } from "./user.validation";
+import {
+  ApplicationExpection,
+  NotValidEmail,
+  ValidationError,
+} from "../../utils/Errors";
+import { registerSchema } from "./user.validation";
+import { DBServices } from "../../DB/db.services";
+import { registerDTO } from "./user.DTO";
+import { HydratedDocument } from "mongoose";
 
 interface IUserServices {
-  signUp(req: Request, res: Response, next: NextFunction): Promise<Response>;
-  login(req: Request, res: Response, next: NextFunction): Response;
-  getUser(req: Request, res: Response, next: NextFunction): Response;
+  register(req: Request, res: Response, next: NextFunction): Promise<Response>;
+  login(req: Request, res: Response, next: NextFunction): Promise<Response>;
+  getUser(req: Request, res: Response, next: NextFunction): Promise<Response>;
 }
 
 export class UserServices implements IUserServices {
-  constructor() { }
-  async signUp(
+  private userModel = new DBServices<IUser>(UserModel);
+
+  constructor() {}
+
+  // register
+  register = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const { firstName, lastName, email, password }: registerDTO = req.body;
+    // step: check user existance
+    const isUserExist = await this.userModel.findOne({ filter: { email } });
+    console.log(isUserExist);
+    if (isUserExist) {
+      throw new NotValidEmail("User already exist");
+    }
+    // step: create new user
+    const user: HydratedDocument<IUser> = await this.userModel.create({
+      data: { firstName, lastName, email, password },
+    });
+    if (!user) {
+      throw new ApplicationExpection("Creation failed", 500);
+    }
+    return res.status(201).json({ message: "User created successfully" });
+  };
+
+  // login
+  async login(
     req: Request,
     res: Response,
     next: NextFunction
   ): Promise<Response> {
-    const { name, email, password } = req.body;
-    const result = await signupSchema.safeParseAsync(req.body);
-    if (!result.success) {
-      return res
-        .status(400)
-        .json({ validationError: JSON.parse(result.error.message) });
-    }
-    return res.status(201).json({ message: "Done", result });
-  }
-  login(req: Request, res: Response, next: NextFunction): Response {
     return res.status(201).json({ message: "Done" });
   }
-  getUser(req: Request, res: Response, next: NextFunction): Response {
+
+  // getUser
+  async getUser(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> {
     return res.status(201).json({ message: "Done" });
   }
 }

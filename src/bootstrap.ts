@@ -5,7 +5,7 @@ const app = express();
 dotenv.config({
   path: path.resolve("./src/.env"),
 });
-import router_v1 from "./routes";
+import router from "./routes";
 import { connectDB } from "./DB/db.connection";
 interface IError extends Error {
   statusCode: number;
@@ -15,7 +15,7 @@ const bootstrap = async () => {
   await connectDB();
 
   app.use(express.json());
-  app.use("/api/v1", router_v1);
+  app.use("/api/v1", router);
   app.use((err: IError, req: Request, res: Response, next: NextFunction) => {
     res.status(err.statusCode || 500).json({
       errMsg: err.message,

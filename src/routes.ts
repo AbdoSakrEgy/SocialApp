@@ -1,7 +1,7 @@
 import { Router } from "express";
-const router_v1 = Router();
+const router = Router();
 import userRouter from "./modules/user/user.controller";
 
-router_v1.use("/users", userRouter);
+router.use("/user", userRouter);
 
-export default router_v1;
+export default router;

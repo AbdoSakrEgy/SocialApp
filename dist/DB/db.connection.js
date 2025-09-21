@@ -7,7 +7,7 @@ exports.connectDB = void 0;
 const mongoose_1 = __importDefault(require("mongoose"));
 const connectDB = async () => {
     await mongoose_1.default
-        .connect("mongodb://localhost:27017/")
+        .connect("mongodb://localhost:27017/SocialApp")
         .then(() => {
         console.log("DB connected successfully");
     })
