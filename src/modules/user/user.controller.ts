@@ -7,7 +7,6 @@ import { registerSchema } from "./user.validation";
 const userServices = new UserServices();
 
 router.post("/register", validation(registerSchema), userServices.register);
-router.post("/login", userServices.login);
-router.get("/get-user", userServices.getUser);
+router.post("/confirm-email", userServices.confirmEmail);
 
 export default router;

@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserModel = exports.Role = exports.Gender = void 0;
 const mongoose_1 = require("mongoose");
+const bcrypt_1 = require("../../utils/bcrypt");
 exports.Gender = {
     male: "male",
     female: "female",
@@ -63,6 +64,8 @@ const userSchema = new mongoose_1.Schema({
     emailOtp: {
         otp: {
             type: String,
+            // next code will cause error, so use mongoose lifecycle
+            // set: async (value: string): Promise<string> => await hash(value),
         },
         expiresIn: Date,
     },
@@ -105,13 +108,13 @@ const userSchema = new mongoose_1.Schema({
 userSchema.pre("save", async function (next) {
     // only hash if it's new or modified
     if (this.emailOtp?.otp && this.isModified("emailOtp.otp")) {
-        // this.emailOtp.otp = await hash(this.emailOtp.otp);
+        this.emailOtp.otp = await (0, bcrypt_1.hash)(this.emailOtp.otp);
     }
     if (this.newEmailOtp?.otp && this.isModified("newEmailOtp.otp")) {
-        // this.newEmailOtp.otp = await hash(this.newEmailOtp.otp);
+        this.newEmailOtp.otp = await (0, bcrypt_1.hash)(this.newEmailOtp.otp);
     }
     if (this.password && this.isModified("password")) {
-        // this.password = await hash(this.password);
+        this.password = await (0, bcrypt_1.hash)(this.password);
     }
     if (this.passwordOtp?.otp && this.isModified("passwordOtp.otp")) {
         // this.passwordOtp.otp = await hash(this.passwordOtp.otp);

@@ -7,9 +7,7 @@ dotenv.config({
 });
 import router from "./routes";
 import { connectDB } from "./DB/db.connection";
-interface IError extends Error {
-  statusCode: number;
-}
+import { IError } from "./utils/Errors";
 
 const bootstrap = async () => {
   await connectDB();

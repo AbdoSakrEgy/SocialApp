@@ -1,4 +1,5 @@
 import { model, Schema, Types } from "mongoose";
+import { hash } from "../../utils/bcrypt";
 
 export interface IUser {
   firstName: string;
@@ -10,18 +11,18 @@ export interface IUser {
   email: string;
   emailOtp: {
     otp: string;
-    expireAt: Date;
+    expiresIn: Date;
   };
   newEmail: string;
   newEmailOtp: {
     otp: string;
-    expireAt: Date;
+    expiresIn: Date;
   };
   emailConfirmed: boolean;
   password: string;
   passwordOtp: {
     otp: string;
-    expireAt: Date;
+    expiresIn: Date;
   };
   credentialsChangedAt: Date;
   isActive: boolean;
@@ -90,6 +91,8 @@ const userSchema = new Schema<IUser>(
     emailOtp: {
       otp: {
         type: String,
+        // next code will cause error, so use mongoose lifecycle
+        // set: async (value: string): Promise<string> => await hash(value),
       },
       expiresIn: Date,
     },
@@ -135,13 +138,13 @@ const userSchema = new Schema<IUser>(
 userSchema.pre("save", async function (next) {
   // only hash if it's new or modified
   if (this.emailOtp?.otp && this.isModified("emailOtp.otp")) {
-    // this.emailOtp.otp = await hash(this.emailOtp.otp);
+    this.emailOtp.otp = await hash(this.emailOtp.otp);
   }
   if (this.newEmailOtp?.otp && this.isModified("newEmailOtp.otp")) {
-    // this.newEmailOtp.otp = await hash(this.newEmailOtp.otp);
+    this.newEmailOtp.otp = await hash(this.newEmailOtp.otp);
   }
   if (this.password && this.isModified("password")) {
-    // this.password = await hash(this.password);
+    this.password = await hash(this.password);
   }
   if (this.passwordOtp?.otp && this.isModified("passwordOtp.otp")) {
     // this.passwordOtp.otp = await hash(this.passwordOtp.otp);

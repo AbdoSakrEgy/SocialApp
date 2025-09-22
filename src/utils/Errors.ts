@@ -1,3 +1,7 @@
+export interface IError extends Error {
+  statusCode: number;
+}
+
 export class ApplicationExpection extends Error {
   statusCode: number;
 
@@ -5,10 +9,6 @@ export class ApplicationExpection extends Error {
     super(msg, options);
     this.statusCode = statusCode;
   }
-}
-
-export interface IError extends Error {
-  statusCode: number;
 }
 
 export class ValidationError extends ApplicationExpection {

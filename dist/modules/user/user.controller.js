@@ -7,6 +7,5 @@ const validation_middleware_1 = require("../../middlewares/validation.middleware
 const user_validation_1 = require("./user.validation");
 const userServices = new user_service_1.UserServices();
 router.post("/register", (0, validation_middleware_1.validation)(user_validation_1.registerSchema), userServices.register);
-router.post("/login", userServices.login);
-router.get("/get-user", userServices.getUser);
+router.post("/confirm-email", userServices.confirmEmail);
 exports.default = router;

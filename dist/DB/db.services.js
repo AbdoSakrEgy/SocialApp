@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DBServices = void 0;
-class DBServices {
+exports.DBRepo = void 0;
+class DBRepo {
     model;
     constructor(model) {
         this.model = model;
@@ -15,4 +15,4 @@ class DBServices {
         return doc;
     };
 }
-exports.DBServices = DBServices;
+exports.DBRepo = DBRepo;
