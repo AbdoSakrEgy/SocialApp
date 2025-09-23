@@ -7,5 +7,13 @@ const validation_middleware_1 = require("../../middlewares/validation.middleware
 const user_validation_1 = require("./user.validation");
 const userServices = new user_service_1.UserServices();
 router.post("/register", (0, validation_middleware_1.validation)(user_validation_1.registerSchema), userServices.register);
-router.post("/confirm-email", userServices.confirmEmail);
+router.post("/login", (0, validation_middleware_1.validation)(user_validation_1.loginSchema), userServices.login);
+// router.post("/refresh-token");
+router.post("/confirm-email", (0, validation_middleware_1.validation)(user_validation_1.confirmEmailSchema), userServices.confirmEmail);
+// router.patch("/update-email");
+router.post("/resend-email-otp", (0, validation_middleware_1.validation)(user_validation_1.resendEmailOtpSchema), userServices.resendEmailOtp);
+// router.patch("/update-password");
+// router.post("/forget-password");
+// router.patch("/change-password");
+// router.post("/logout");
 exports.default = router;

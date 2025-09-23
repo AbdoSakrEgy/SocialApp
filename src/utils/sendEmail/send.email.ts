@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { createTransport, Transport } from "nodemailer";
 
 export const sendEmail = async ({
   to,
@@ -9,7 +9,7 @@ export const sendEmail = async ({
   subject: string;
   html: string;
 }) => {
-  const transporter = nodemailer.createTransport({
+  const transporter = createTransport({
     service: "gmail",
     auth: {
       user: process.env.SENDER_EMAIL,

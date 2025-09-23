@@ -9,7 +9,7 @@ export const successHandler = ({
   res: Response;
   message?: string;
   status?: number;
-  result?: Object;
+  result?: Object | null;
 }): Response => {
   return res.status(status).json({ message, status, result });
 };

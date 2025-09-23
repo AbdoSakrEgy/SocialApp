@@ -1,14 +1,21 @@
 import { IUser, UserModel } from "./user.model";
 import { NextFunction, Request, Response } from "express";
 import { ApplicationExpection, NotValidEmail } from "../../utils/Errors";
-import { registerDTO } from "./user.DTO";
+import {
+  confirmEmaiDTO,
+  loginDTO,
+  registerDTO,
+  resendEmailOtpDTO,
+} from "./user.DTO";
 import { HydratedDocument } from "mongoose";
 import { DBRepo } from "../../DB/db.repo";
-import { sendEmail } from "../../utils/sendEmail/sendEmail";
+import { sendEmail } from "../../utils/sendEmail/send.email";
 import { template } from "../../utils/sendEmail/generateHTML";
 import { createOtp } from "../../utils/createOtp";
 import { successHandler } from "../../utils/successHandler";
 import { compare } from "../../utils/bcrypt";
+import { emailEvent } from "../../utils/sendEmail/email.events";
+import { createJwt } from "../../utils/jwt";
 // import { UserRepo } from "./user.repo";
 
 interface IUserServices {
@@ -43,8 +50,10 @@ export class UserServices implements IUserServices {
     }
     // step: send otp to email
     //! const otpCode = createOtp();
+    //! why user.repo
+    //! why emmeters in sendEmail.js
     const otpCode = "555";
-    const { isEmailSended, info } = await sendEmail({
+    emailEvent.emit("sendEmail", {
       to: email,
       subject: "ECommerceApp",
       html: template({
@@ -53,16 +62,6 @@ export class UserServices implements IUserServices {
         subject: "Confirm email",
       }),
     });
-    if (!isEmailSended) {
-      return successHandler({
-        res,
-        message: "Error while checking email",
-        status: 400,
-      });
-    }
-    if (!isEmailSended) {
-      throw new ApplicationExpection("Error while sending email", 400);
-    }
     // step: create new user
     const user: HydratedDocument<IUser> = await this.userModel.create({
       data: {
@@ -72,14 +71,79 @@ export class UserServices implements IUserServices {
         password,
         emailOtp: {
           otp: otpCode,
-          expiresIn: new Date(Date.now() + 60 * 60 * 1000),
+          expiresIn: new Date(Date.now() + 5 * 60 * 1000),
         },
       },
     });
     if (!user) {
       throw new ApplicationExpection("Creation failed", 500);
     }
-    return successHandler({ res, message: "User created successfully" });
+    // step: create token
+    const accessToken = createJwt(
+      { id: user._id, email: user.email },
+      process.env.ACCESS_SEGNATURE as string,
+      {
+        expiresIn: "1h",
+        //! jwtid:createOtp()
+        jwtid: "555",
+      }
+    );
+    const refreshToken = createJwt(
+      { id: user._id, email: user.email },
+      process.env.REFRESH_SEGNATURE as string,
+      {
+        expiresIn: "7d",
+        //! jwtid:createOtp()
+        jwtid: "555",
+      }
+    );
+    return successHandler({
+      res,
+      message: "User created successfully",
+      result: { accessToken, refreshToken },
+    });
+  };
+
+  // login
+  login = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const { email, password }: loginDTO = req.body;
+    // step: check credentials
+    const isUserExist = await this.userModel.findOne({ filter: { email } });
+    if (!isUserExist) {
+      throw new ApplicationExpection("Invalid credentials", 404);
+    }
+    const user = isUserExist;
+    if (!compare(password, user.password)) {
+      throw new ApplicationExpection("Invalid credentials", 401);
+    }
+    // step: create token
+    const accessToken = createJwt(
+      { id: user._id, email: user.email },
+      process.env.ACCESS_SEGNATURE as string,
+      {
+        expiresIn: "1h",
+        //! jwtid:createOtp()
+        jwtid: "555",
+      }
+    );
+    const refreshToken = createJwt(
+      { id: user._id, email: user.email },
+      process.env.REFRESH_SEGNATURE as string,
+      {
+        expiresIn: "7d",
+        //! jwtid:createOtp()
+        jwtid: "555",
+      }
+    );
+    return successHandler({
+      res,
+      message: "Loggedin successfully",
+      result: { accessToken, refreshToken },
+    });
   };
 
   // confirmEmail
@@ -88,7 +152,7 @@ export class UserServices implements IUserServices {
     res: Response,
     next: NextFunction
   ): Promise<Response> => {
-    const { email, firstOtp, secondOtp } = req.body;
+    const { email, firstOtp, secondOtp }: confirmEmaiDTO = req.body;
     // step: check user exitance
     const user = await this.userModel.findOne({ filter: { email } });
     if (!user) {
@@ -145,5 +209,49 @@ export class UserServices implements IUserServices {
       res,
       message: "New email confirmed successfully",
     });
+  };
+
+  // resendEmailOtp
+  resendEmailOtp = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const { email }: resendEmailOtpDTO = req.body;
+    // step: check email existance
+    const isUserExist = await this.userModel.findOne({ filter: { email } });
+    if (!isUserExist) {
+      throw new ApplicationExpection("User not found", 404);
+    }
+    const user = isUserExist;
+    // step: check if email otp not expired yet
+    if (user.emailOtp?.expiresIn > new Date(Date.now())) {
+      throw new ApplicationExpection("Your OTP not expired yet", 400);
+    }
+    // step: send otp to email
+    //! const otpCode = createOtp();
+    const otpCode = "555";
+    emailEvent.emit("sendEmail", {
+      to: email,
+      subject: "ECommerceApp",
+      html: template({
+        otpCode,
+        receiverName: user.firstName,
+        subject: "Confirm email",
+      }),
+    });
+    // step: update emailOtp
+    const updatedUset = await this.userModel.findOneAndUpdate({
+      filter: { email: user.email },
+      data: {
+        $set: {
+          emailOtp: {
+            otp: otpCode,
+            expiresIn: new Date(Date.now() + 5 * 60 * 1000),
+          },
+        },
+      },
+    });
+    return successHandler({ res, message: "OTP sended successfully" });
   };
 }

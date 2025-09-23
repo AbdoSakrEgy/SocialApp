@@ -4,10 +4,11 @@ exports.UserServices = void 0;
 const user_model_1 = require("./user.model");
 const Errors_1 = require("../../utils/Errors");
 const db_repo_1 = require("../../DB/db.repo");
-const sendEmail_1 = require("../../utils/sendEmail/sendEmail");
 const generateHTML_1 = require("../../utils/sendEmail/generateHTML");
 const successHandler_1 = require("../../utils/successHandler");
 const bcrypt_1 = require("../../utils/bcrypt");
+const email_events_1 = require("../../utils/sendEmail/email.events");
+const jwt_1 = require("../../utils/jwt");
 class UserServices {
     userModel = new db_repo_1.DBRepo(user_model_1.UserModel);
     // private userModel = new UserRepo();
@@ -25,8 +26,10 @@ class UserServices {
         }
         // step: send otp to email
         //! const otpCode = createOtp();
+        //! why user.repo
+        //! why emmeters in sendEmail.js
         const otpCode = "555";
-        const { isEmailSended, info } = await (0, sendEmail_1.sendEmail)({
+        email_events_1.emailEvent.emit("sendEmail", {
             to: email,
             subject: "ECommerceApp",
             html: (0, generateHTML_1.template)({
@@ -35,16 +38,6 @@ class UserServices {
                 subject: "Confirm email",
             }),
         });
-        if (!isEmailSended) {
-            return (0, successHandler_1.successHandler)({
-                res,
-                message: "Error while checking email",
-                status: 400,
-            });
-        }
-        if (!isEmailSended) {
-            throw new Errors_1.ApplicationExpection("Error while sending email", 400);
-        }
         // step: create new user
         const user = await this.userModel.create({
             data: {
@@ -54,14 +47,58 @@ class UserServices {
                 password,
                 emailOtp: {
                     otp: otpCode,
-                    expiresIn: new Date(Date.now() + 60 * 60 * 1000),
+                    expiresIn: new Date(Date.now() + 5 * 60 * 1000),
                 },
             },
         });
         if (!user) {
             throw new Errors_1.ApplicationExpection("Creation failed", 500);
         }
-        return (0, successHandler_1.successHandler)({ res, message: "User created successfully" });
+        // step: create token
+        const accessToken = (0, jwt_1.createJwt)({ id: user._id, email: user.email }, process.env.ACCESS_SEGNATURE, {
+            expiresIn: "1h",
+            //! jwtid:createOtp()
+            jwtid: "555",
+        });
+        const refreshToken = (0, jwt_1.createJwt)({ id: user._id, email: user.email }, process.env.REFRESH_SEGNATURE, {
+            expiresIn: "7d",
+            //! jwtid:createOtp()
+            jwtid: "555",
+        });
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "User created successfully",
+            result: { accessToken, refreshToken },
+        });
+    };
+    // login
+    login = async (req, res, next) => {
+        const { email, password } = req.body;
+        // step: check credentials
+        const isUserExist = await this.userModel.findOne({ filter: { email } });
+        if (!isUserExist) {
+            throw new Errors_1.ApplicationExpection("Invalid credentials", 404);
+        }
+        const user = isUserExist;
+        if (!(0, bcrypt_1.compare)(password, user.password)) {
+            throw new Errors_1.ApplicationExpection("Invalid credentials", 401);
+        }
+        // step: create token
+        const accessToken = (0, jwt_1.createJwt)({ id: user._id, email: user.email }, process.env.ACCESS_SEGNATURE, {
+            expiresIn: "1h",
+            //! jwtid:createOtp()
+            jwtid: "555",
+        });
+        const refreshToken = (0, jwt_1.createJwt)({ id: user._id, email: user.email }, process.env.REFRESH_SEGNATURE, {
+            expiresIn: "7d",
+            //! jwtid:createOtp()
+            jwtid: "555",
+        });
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "Loggedin successfully",
+            result: { accessToken, refreshToken },
+        });
     };
     // confirmEmail
     confirmEmail = async (req, res, next) => {
@@ -121,6 +158,45 @@ class UserServices {
             res,
             message: "New email confirmed successfully",
         });
+    };
+    // resendEmailOtp
+    resendEmailOtp = async (req, res, next) => {
+        const { email } = req.body;
+        // step: check email existance
+        const isUserExist = await this.userModel.findOne({ filter: { email } });
+        if (!isUserExist) {
+            throw new Errors_1.ApplicationExpection("User not found", 404);
+        }
+        const user = isUserExist;
+        // step: check if email otp not expired yet
+        if (user.emailOtp?.expiresIn > new Date(Date.now())) {
+            throw new Errors_1.ApplicationExpection("Your OTP not expired yet", 400);
+        }
+        // step: send otp to email
+        //! const otpCode = createOtp();
+        const otpCode = "555";
+        email_events_1.emailEvent.emit("sendEmail", {
+            to: email,
+            subject: "ECommerceApp",
+            html: (0, generateHTML_1.template)({
+                otpCode,
+                receiverName: user.firstName,
+                subject: "Confirm email",
+            }),
+        });
+        // step: update emailOtp
+        const updatedUset = await this.userModel.findOneAndUpdate({
+            filter: { email: user.email },
+            data: {
+                $set: {
+                    emailOtp: {
+                        otp: otpCode,
+                        expiresIn: new Date(Date.now() + 5 * 60 * 1000),
+                    },
+                },
+            },
+        });
+        return (0, successHandler_1.successHandler)({ res, message: "OTP sended successfully" });
     };
 }
 exports.UserServices = UserServices;
