@@ -4,11 +4,11 @@ exports.AuthServices = void 0;
 const db_repo_1 = require("../../DB/db.repo");
 const user_model_1 = require("../user/user.model");
 const Errors_1 = require("../../utils/Errors");
-const email_events_1 = require("../../utils/sendEmail/email.events");
 const generateHTML_1 = require("../../utils/sendEmail/generateHTML");
 const jwt_1 = require("../../utils/jwt");
 const successHandler_1 = require("../../utils/successHandler");
 const bcrypt_1 = require("../../utils/bcrypt");
+const send_email_1 = require("../../utils/sendEmail/send.email");
 class AuthServices {
     userModel = new db_repo_1.DBRepo(user_model_1.UserModel);
     // private userModel = new UserRepo();
@@ -29,7 +29,7 @@ class AuthServices {
         //! why user.repo
         //! why emmeters in sendEmail.js
         const otpCode = "555";
-        email_events_1.emailEvent.emit("sendEmail", {
+        const { isEmailSended, info } = await (0, send_email_1.sendEmail)({
             to: email,
             subject: "ECommerceApp",
             html: (0, generateHTML_1.template)({
@@ -38,6 +38,9 @@ class AuthServices {
                 subject: "Confirm email",
             }),
         });
+        if (!isEmailSended) {
+            throw new Errors_1.ApplicationExpection("Error while sending email", 400);
+        }
         // step: create new user
         const user = await this.userModel.create({
             data: {
@@ -175,7 +178,7 @@ class AuthServices {
         // step: send otp to email
         //! const otpCode = createOtp();
         const otpCode = "555";
-        email_events_1.emailEvent.emit("sendEmail", {
+        const { isEmailSended, info } = await (0, send_email_1.sendEmail)({
             to: email,
             subject: "ECommerceApp",
             html: (0, generateHTML_1.template)({
@@ -184,6 +187,9 @@ class AuthServices {
                 subject: "Confirm email",
             }),
         });
+        if (!isEmailSended) {
+            throw new Errors_1.ApplicationExpection("Error while sending email", 400);
+        }
         // step: update emailOtp
         const updatedUset = await this.userModel.findOneAndUpdate({
             filter: { email: user.email },

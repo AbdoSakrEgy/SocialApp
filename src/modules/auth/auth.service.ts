@@ -8,13 +8,13 @@ import {
   resendEmailOtpDTO,
 } from "./auth.dto";
 import { ApplicationExpection, NotValidEmail } from "../../utils/Errors";
-import { emailEvent } from "../../utils/sendEmail/email.events";
 import { HydratedDocument } from "mongoose";
 import { template } from "../../utils/sendEmail/generateHTML";
 import { createJwt } from "../../utils/jwt";
 import { createOtp } from "../../utils/createOtp";
 import { successHandler } from "../../utils/successHandler";
 import { compare } from "../../utils/bcrypt";
+import { sendEmail } from "../../utils/sendEmail/send.email";
 
 interface IAuthServcies {
   register(req: Request, res: Response, next: NextFunction): Promise<Response>;
@@ -57,7 +57,7 @@ export class AuthServices implements IAuthServcies {
     //! why user.repo
     //! why emmeters in sendEmail.js
     const otpCode = "555";
-    emailEvent.emit("sendEmail", {
+    const { isEmailSended, info } = await sendEmail({
       to: email,
       subject: "ECommerceApp",
       html: template({
@@ -66,6 +66,9 @@ export class AuthServices implements IAuthServcies {
         subject: "Confirm email",
       }),
     });
+    if (!isEmailSended) {
+      throw new ApplicationExpection("Error while sending email", 400);
+    }
     // step: create new user
     const user: HydratedDocument<IUser> = await this.userModel.create({
       data: {
@@ -235,7 +238,7 @@ export class AuthServices implements IAuthServcies {
     // step: send otp to email
     //! const otpCode = createOtp();
     const otpCode = "555";
-    emailEvent.emit("sendEmail", {
+    const { isEmailSended, info } = await sendEmail({
       to: email,
       subject: "ECommerceApp",
       html: template({
@@ -244,6 +247,9 @@ export class AuthServices implements IAuthServcies {
         subject: "Confirm email",
       }),
     });
+    if (!isEmailSended) {
+      throw new ApplicationExpection("Error while sending email", 400);
+    }
     // step: update emailOtp
     const updatedUset = await this.userModel.findOneAndUpdate({
       filter: { email: user.email },
