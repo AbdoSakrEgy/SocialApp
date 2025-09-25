@@ -1,5 +1,6 @@
 import { model, Schema, Types } from "mongoose";
 import { hash } from "../../utils/bcrypt";
+import { decrypt, encrypt } from "../../utils/crypto";
 
 export interface IUser {
   firstName: string;
@@ -74,8 +75,8 @@ const userSchema = new Schema<IUser>(
         validator: (v) => /^\+?[1-9]\d{7,14}$/.test(v.replace(/[\s-]/g, "")),
         message: (props) => `${props.value} is not a valid phone number!`,
       },
-      // set: (value:string) => (value ? encrypt(value) : value),
-      // get: (value:string) => (value ? decrypt(value) : value),
+      set: (value: string) => (value ? encrypt(value) : value),
+      get: (value: string) => (value ? decrypt(value) : value),
     },
     role: {
       type: String,
@@ -135,8 +136,9 @@ const userSchema = new Schema<IUser>(
 );
 
 // Mongoose lifecycle
+// for create/save
 userSchema.pre("save", async function (next) {
-  // only hash if it's new or modified
+  // only hash if it's new
   if (this.emailOtp?.otp && this.isModified("emailOtp.otp")) {
     this.emailOtp.otp = await hash(this.emailOtp.otp);
   }
@@ -147,7 +149,43 @@ userSchema.pre("save", async function (next) {
     this.password = await hash(this.password);
   }
   if (this.passwordOtp?.otp && this.isModified("passwordOtp.otp")) {
-    // this.passwordOtp.otp = await hash(this.passwordOtp.otp);
+    this.passwordOtp.otp = await hash(this.passwordOtp.otp);
+  }
+});
+
+// for findOneAndUpdate
+userSchema.pre("findOneAndUpdate", async function (next) {
+  try {
+    const update: any = this.getUpdate();
+    if (!update) return next();
+
+    // Normalize to $set for easier handling
+    const $set = update.$set || update;
+
+    if ($set.password) {
+      $set.password = await hash($set.password);
+      // $set.credentialsChangedAt = new Date(Date.now());
+    }
+
+    if ($set["emailOtp.otp"]) {
+      $set["emailOtp.otp"] = await hash($set["emailOtp.otp"]);
+    }
+
+    if ($set["newEmailOtp.otp"]) {
+      $set["newEmailOtp.otp"] = await hash($set["newEmailOtp.otp"]);
+    }
+
+    if ($set["passwordOtp.otp"]) {
+      $set["passwordOtp.otp"] = await hash($set["passwordOtp.otp"]);
+    }
+
+    if (!update.$set && $set !== update) {
+      update.$set = $set;
+    }
+
+    return next();
+  } catch (error) {
+    return next(error as any);
   }
 });
 

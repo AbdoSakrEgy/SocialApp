@@ -2,10 +2,13 @@ import { NextFunction, Request, Response } from "express";
 import { DBRepo } from "../../DB/db.repo";
 import { IUser, UserModel } from "../user/user.model";
 import {
+  changePasswordDTO,
   confirmEmaiDTO,
+  forgetPasswordDTO,
   loginDTO,
   registerDTO,
   resendEmailOtpDTO,
+  updatePasswordDTO,
 } from "./auth.dto";
 import { ApplicationExpection, NotValidEmail } from "../../utils/Errors";
 import { HydratedDocument } from "mongoose";
@@ -15,6 +18,7 @@ import { createOtp } from "../../utils/createOtp";
 import { successHandler } from "../../utils/successHandler";
 import { compare } from "../../utils/bcrypt";
 import { sendEmail } from "../../utils/sendEmail/send.email";
+import { decodeToken, tokenTypes } from "../../utils/decodeToken";
 
 interface IAuthServcies {
   register(req: Request, res: Response, next: NextFunction): Promise<Response>;
@@ -87,7 +91,7 @@ export class AuthServices implements IAuthServcies {
     }
     // step: create token
     const accessToken = createJwt(
-      { id: user._id, email: user.email },
+      { userId: user._id, userEmail: user.email },
       process.env.ACCESS_SEGNATURE as string,
       {
         expiresIn: "1h",
@@ -96,7 +100,7 @@ export class AuthServices implements IAuthServcies {
       }
     );
     const refreshToken = createJwt(
-      { id: user._id, email: user.email },
+      { userId: user._id, userEmail: user.email },
       process.env.REFRESH_SEGNATURE as string,
       {
         expiresIn: "7d",
@@ -124,12 +128,12 @@ export class AuthServices implements IAuthServcies {
       throw new ApplicationExpection("Invalid credentials", 404);
     }
     const user = isUserExist;
-    if (!compare(password, user.password)) {
+    if (!(await compare(password, user.password))) {
       throw new ApplicationExpection("Invalid credentials", 401);
     }
     // step: create token
     const accessToken = createJwt(
-      { id: user._id, email: user.email },
+      { userId: user._id, userEmail: user.email },
       process.env.ACCESS_SEGNATURE as string,
       {
         expiresIn: "1h",
@@ -138,7 +142,7 @@ export class AuthServices implements IAuthServcies {
       }
     );
     const refreshToken = createJwt(
-      { id: user._id, email: user.email },
+      { userId: user._id, userEmail: user.email },
       process.env.REFRESH_SEGNATURE as string,
       {
         expiresIn: "7d",
@@ -151,6 +155,42 @@ export class AuthServices implements IAuthServcies {
       message: "Loggedin successfully",
       result: { accessToken, refreshToken },
     });
+  };
+
+  // refresh-token
+  refreshToken = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    //! const { authorization } = req.headers;
+    //! why last line output error
+    const authorization = req.headers.authorization;
+    // step: check authorization
+    if (!authorization) {
+      throw new ApplicationExpection("Authorization undefiend", 400);
+    }
+    // step: decode authorization
+    const { user, payload } = await decodeToken({
+      authorization,
+      tokenType: tokenTypes.refresh,
+    });
+    // step: create accessToken
+    const newPayload = {
+      userId: payload.userId,
+      userEmail: payload.userEmail,
+    };
+    //! const jwtid = createOtp();
+    const jwtid = "666";
+    const accessToken = createJwt(
+      newPayload,
+      process.env.ACCESS_SEGNATURE as string,
+      {
+        expiresIn: "1h",
+        jwtid,
+      }
+    );
+    return successHandler({ res, result: { accessToken } });
   };
 
   // confirmEmail
@@ -263,5 +303,141 @@ export class AuthServices implements IAuthServcies {
       },
     });
     return successHandler({ res, message: "OTP sended successfully" });
+  };
+
+  // updatePassword
+  updatePassword = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    const { currentPassword, newPassword }: updatePasswordDTO = req.body;
+    // step: check password correction
+    if (!(await compare(currentPassword, user.password))) {
+      throw new ApplicationExpection("Invalid credentials", 401);
+    }
+    // step: check newPassword not equal currentPassword
+    if (await compare(newPassword, user.password)) {
+      throw new ApplicationExpection(
+        "You can not make new password equal to old password",
+        400
+      );
+    }
+    // step: update password and credentialsChangedAt
+    const updatedUser = await this.userModel.findOneAndUpdate({
+      filter: { _id: user._id },
+      data: {
+        $set: {
+          password: newPassword,
+        },
+      },
+    });
+    return successHandler({
+      res,
+      message: "Password updated successfully, please login again",
+    });
+  };
+
+  // forgetPassword
+  forgetPassword = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const { email }: forgetPasswordDTO = req.body;
+    // step: check email existance
+    const isUserExist = await this.userModel.findOne({ filter: { email } });
+    if (!isUserExist) {
+      throw new ApplicationExpection("User not found", 404);
+    }
+    const user = isUserExist;
+    // step: check if password otp not expired yet
+    if (user.passwordOtp?.expiresIn > new Date(Date.now())) {
+      throw new ApplicationExpection("Your OTP not expired yet", 400);
+    }
+    // step: send otp to email
+    // !const otpCode=createOtp()
+    const otpCode = "555";
+    const { isEmailSended, info } = await sendEmail({
+      to: user.email,
+      subject: "Reset password OTP",
+      html: template({
+        otpCode,
+        receiverName: user.firstName,
+        subject: "Reset password OTP",
+      }),
+    });
+    if (!isEmailSended) {
+      throw new ApplicationExpection("Error while sending email", 400);
+    }
+    // step: update passwordOtp
+    const updatedUser = await this.userModel.findOneAndUpdate({
+      filter: { _id: user._id },
+      data: {
+        $set: {
+          "passwordOtp.otp": otpCode,
+          "passwordOtp.expiresIn": new Date(Date.now() + 5 * 60 * 1000),
+        },
+      },
+    });
+    return successHandler({
+      res,
+      message: "OTP sended to email, please use it to restart your password",
+    });
+  };
+
+  // changePassword
+  changePassword = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const { email, otp, newPassword }: changePasswordDTO = req.body;
+    // step: check email existance
+    const isUserExist = await this.userModel.findOne({ filter: { email } });
+    if (!isUserExist) {
+      throw new ApplicationExpection("User not found", 404);
+    }
+    const user = isUserExist;
+    // step: check otp
+    if (!compare(otp, user.passwordOtp.otp)) {
+      throw new ApplicationExpection("Invalid OTP", 400);
+    }
+    // step: change password
+    const updatedUser = await this.userModel.findOneAndUpdate({
+      filter: { email },
+      data: {
+        $set: {
+          password: newPassword,
+        },
+      },
+    });
+    return successHandler({
+      res,
+      message: "Password changed successfully, You have to login",
+    });
+  };
+
+  // logout
+  logout = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    // step: change credentialsChangedAt
+    const updatedUser = await this.userModel.findOneAndUpdate({
+      filter: { _id: user._id },
+      data: {
+        $set: {
+          credentialsChangedAt: new Date(Date.now()),
+        },
+      },
+    });
+    return successHandler({
+      res,
+      message: "Logged out successfully",
+    });
   };
 }

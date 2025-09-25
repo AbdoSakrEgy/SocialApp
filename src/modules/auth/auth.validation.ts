@@ -36,6 +36,11 @@ export const registerSchema = z
     }
   });
 
+export const loginSchema = z.object({
+  email: z.email(),
+  password: z.string(),
+});
+
 export const confirmEmailSchema = z.object({
   email: z.email(),
   firstOtp: z.string(),
@@ -46,7 +51,17 @@ export const resendEmailOtpSchema = z.object({
   email: z.email(),
 });
 
-export const loginSchema = z.object({
+export const updatePasswordSchema = z.object({
+  currentPassword: z.string(),
+  newPassword: z.string(),
+});
+
+export const forgetPasswordSchema = z.object({
   email: z.email(),
-  password: z.string(),
+});
+
+export const changePasswordSchema = z.object({
+  email: z.email(),
+  otp: z.string(),
+  newPassword: z.string(),
 });
