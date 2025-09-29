@@ -44,7 +44,11 @@ export const loginSchema = z.object({
 export const confirmEmailSchema = z.object({
   email: z.email(),
   firstOtp: z.string(),
-  secondOtp: z.string(),
+  secondOtp: z.string().optional(),
+});
+
+export const updateEmailSchema = z.object({
+  newEmail: z.email(),
 });
 
 export const resendEmailOtpSchema = z.object({

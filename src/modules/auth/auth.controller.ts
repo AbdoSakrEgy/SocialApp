@@ -8,6 +8,7 @@ import {
   loginSchema,
   registerSchema,
   resendEmailOtpSchema,
+  updateEmailSchema,
   updatePasswordSchema,
 } from "./auth.validation";
 import { auth } from "../../middlewares/auth.middleware";
@@ -23,7 +24,12 @@ router.post(
   validation(confirmEmailSchema),
   authServices.confirmEmail
 );
-// router.patch("/update-email");
+router.patch(
+  "/update-email",
+  auth,
+  validation(updateEmailSchema),
+  authServices.updateEmail
+);
 router.post(
   "/resend-email-otp",
   validation(resendEmailOtpSchema),

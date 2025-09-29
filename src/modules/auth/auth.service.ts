@@ -8,6 +8,7 @@ import {
   loginDTO,
   registerDTO,
   resendEmailOtpDTO,
+  updateEmaiDTO,
   updatePasswordDTO,
 } from "./auth.dto";
 import { ApplicationExpection, NotValidEmail } from "../../utils/Errors";
@@ -19,6 +20,7 @@ import { successHandler } from "../../utils/successHandler";
 import { compare } from "../../utils/bcrypt";
 import { sendEmail } from "../../utils/sendEmail/send.email";
 import { decodeToken, tokenTypes } from "../../utils/decodeToken";
+import { UserRepo } from "../user/user.repo";
 
 interface IAuthServcies {
   register(req: Request, res: Response, next: NextFunction): Promise<Response>;
@@ -36,8 +38,8 @@ interface IAuthServcies {
 }
 
 export class AuthServices implements IAuthServcies {
-  private userModel = new DBRepo(UserModel);
-  // private userModel = new UserRepo();
+  // private userModel = new DBRepo(UserModel);
+  private userModel = new UserRepo();
 
   constructor() {}
 
@@ -57,13 +59,11 @@ export class AuthServices implements IAuthServcies {
       throw new NotValidEmail("User already exist");
     }
     // step: send otp to email
-    //! const otpCode = createOtp();
-    //! why user.repo
-    //! why emmeters in sendEmail.js
-    const otpCode = "555";
+    const otpCode = createOtp();
+
     const { isEmailSended, info } = await sendEmail({
       to: email,
-      subject: "ECommerceApp",
+      subject: "SocialApp",
       html: template({
         otpCode,
         receiverName: firstName,
@@ -95,8 +95,7 @@ export class AuthServices implements IAuthServcies {
       process.env.ACCESS_SEGNATURE as string,
       {
         expiresIn: "1h",
-        //! jwtid:createOtp()
-        jwtid: "555",
+        jwtid: createOtp(),
       }
     );
     const refreshToken = createJwt(
@@ -104,8 +103,7 @@ export class AuthServices implements IAuthServcies {
       process.env.REFRESH_SEGNATURE as string,
       {
         expiresIn: "7d",
-        //! jwtid:createOtp()
-        jwtid: "555",
+        jwtid: createOtp(),
       }
     );
     return successHandler({
@@ -137,8 +135,7 @@ export class AuthServices implements IAuthServcies {
       process.env.ACCESS_SEGNATURE as string,
       {
         expiresIn: "1h",
-        //! jwtid:createOtp()
-        jwtid: "555",
+        jwtid: createOtp(),
       }
     );
     const refreshToken = createJwt(
@@ -146,8 +143,7 @@ export class AuthServices implements IAuthServcies {
       process.env.REFRESH_SEGNATURE as string,
       {
         expiresIn: "7d",
-        //! jwtid:createOtp()
-        jwtid: "555",
+        jwtid: createOtp(),
       }
     );
     return successHandler({
@@ -163,8 +159,7 @@ export class AuthServices implements IAuthServcies {
     res: Response,
     next: NextFunction
   ): Promise<Response> => {
-    //! const { authorization } = req.headers;
-    //! why last line output error
+    //! const { authorization } = req.headers; why this line cause error
     const authorization = req.headers.authorization;
     // step: check authorization
     if (!authorization) {
@@ -180,8 +175,8 @@ export class AuthServices implements IAuthServcies {
       userId: payload.userId,
       userEmail: payload.userEmail,
     };
-    //! const jwtid = createOtp();
-    const jwtid = "666";
+    const jwtid = createOtp();
+    // const jwtid = "666";
     const accessToken = createJwt(
       newPayload,
       process.env.ACCESS_SEGNATURE as string,
@@ -258,6 +253,78 @@ export class AuthServices implements IAuthServcies {
     });
   };
 
+  // updateEmail
+  updateEmail = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    const { newEmail }: updateEmaiDTO = req.body;
+    // step: check if email confirmed
+    if (!user.emailConfirmed) {
+      return successHandler({
+        res,
+        message: "Please confirm email to update it",
+        status: 400,
+      });
+    }
+    // step: send otp to current email
+    const otpCodeForCurrentEmail = createOtp();
+    const { isEmailSended } = await sendEmail({
+      to: user.email,
+      subject: "SocialApp",
+      html: template({
+        otpCode: otpCodeForCurrentEmail,
+        receiverName: user.firstName,
+        subject: "Some one try to change your email! is that you?",
+      }),
+    });
+    if (!isEmailSended) {
+      return successHandler({
+        res,
+        message: "Error while checking email",
+        status: 400,
+      });
+    }
+    // step: send otp to new email
+    const otpCodeForNewEmail = createOtp();
+    const resultOfSendEmail = await sendEmail({
+      to: newEmail,
+      subject: "SocialApp",
+      html: template({
+        otpCode: otpCodeForNewEmail,
+        receiverName: user.firstName,
+        subject: "Confirm new email",
+      }),
+    });
+    if (!resultOfSendEmail.isEmailSended) {
+      return successHandler({
+        res,
+        message: "Error while checking email",
+        status: 400,
+      });
+    }
+    // step: save emailOtp, newEmail and newEmailOtp
+    const updatedUser = await this.userModel.findOneAndUpdate({
+      filter: { _id: user._id },
+      data: {
+        $set: {
+          "emailOtp.otp": otpCodeForCurrentEmail,
+          "emialOtp.expiresIn": new Date(Date.now() + 5 * 60 * 1000),
+          newEmail,
+          "newEmailOtp.otp": otpCodeForNewEmail,
+          "newEmailOtp.expiresIn": new Date(Date.now() + 5 * 60 * 1000),
+        },
+      },
+    });
+    return successHandler({
+      res,
+      message:
+        "OTP sended for current email and new email, please confirm new email to save updates",
+    });
+  };
+
   // resendEmailOtp
   resendEmailOtp = async (
     req: Request,
@@ -276,11 +343,11 @@ export class AuthServices implements IAuthServcies {
       throw new ApplicationExpection("Your OTP not expired yet", 400);
     }
     // step: send otp to email
-    //! const otpCode = createOtp();
-    const otpCode = "555";
+    const otpCode = createOtp();
+    // const otpCode = "555";
     const { isEmailSended, info } = await sendEmail({
       to: email,
-      subject: "ECommerceApp",
+      subject: "SocialApp",
       html: template({
         otpCode,
         receiverName: user.firstName,
@@ -357,8 +424,8 @@ export class AuthServices implements IAuthServcies {
       throw new ApplicationExpection("Your OTP not expired yet", 400);
     }
     // step: send otp to email
-    // !const otpCode=createOtp()
-    const otpCode = "555";
+    const otpCode = createOtp();
+    // const otpCode = "555";
     const { isEmailSended, info } = await sendEmail({
       to: user.email,
       subject: "Reset password OTP",

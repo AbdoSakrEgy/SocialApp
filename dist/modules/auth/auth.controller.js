@@ -11,7 +11,7 @@ router.post("/register", (0, validation_middleware_1.validation)(auth_validation
 router.post("/login", (0, validation_middleware_1.validation)(auth_validation_1.loginSchema), authServices.login);
 router.post("/refresh-token", authServices.refreshToken);
 router.post("/confirm-email", (0, validation_middleware_1.validation)(auth_validation_1.confirmEmailSchema), authServices.confirmEmail);
-// router.patch("/update-email");
+router.patch("/update-email", auth_middleware_1.auth, (0, validation_middleware_1.validation)(auth_validation_1.updateEmailSchema), authServices.updateEmail);
 router.post("/resend-email-otp", (0, validation_middleware_1.validation)(auth_validation_1.resendEmailOtpSchema), authServices.resendEmailOtp);
 router.patch("/update-password", auth_middleware_1.auth, (0, validation_middleware_1.validation)(auth_validation_1.updatePasswordSchema), authServices.updatePassword);
 router.post("/forget-password", (0, validation_middleware_1.validation)(auth_validation_1.forgetPasswordSchema), authServices.forgetPassword);

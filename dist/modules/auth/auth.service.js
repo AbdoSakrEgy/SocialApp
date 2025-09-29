@@ -1,18 +1,18 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthServices = void 0;
-const db_repo_1 = require("../../DB/db.repo");
-const user_model_1 = require("../user/user.model");
 const Errors_1 = require("../../utils/Errors");
 const generateHTML_1 = require("../../utils/sendEmail/generateHTML");
 const jwt_1 = require("../../utils/jwt");
+const createOtp_1 = require("../../utils/createOtp");
 const successHandler_1 = require("../../utils/successHandler");
 const bcrypt_1 = require("../../utils/bcrypt");
 const send_email_1 = require("../../utils/sendEmail/send.email");
 const decodeToken_1 = require("../../utils/decodeToken");
+const user_repo_1 = require("../user/user.repo");
 class AuthServices {
-    userModel = new db_repo_1.DBRepo(user_model_1.UserModel);
-    // private userModel = new UserRepo();
+    // private userModel = new DBRepo(UserModel);
+    userModel = new user_repo_1.UserRepo();
     constructor() { }
     // register
     register = async (req, res, next) => {
@@ -26,13 +26,10 @@ class AuthServices {
             throw new Errors_1.NotValidEmail("User already exist");
         }
         // step: send otp to email
-        //! const otpCode = createOtp();
-        //! why user.repo
-        //! why emmeters in sendEmail.js
-        const otpCode = "555";
+        const otpCode = (0, createOtp_1.createOtp)();
         const { isEmailSended, info } = await (0, send_email_1.sendEmail)({
             to: email,
-            subject: "ECommerceApp",
+            subject: "SocialApp",
             html: (0, generateHTML_1.template)({
                 otpCode,
                 receiverName: firstName,
@@ -61,13 +58,11 @@ class AuthServices {
         // step: create token
         const accessToken = (0, jwt_1.createJwt)({ userId: user._id, userEmail: user.email }, process.env.ACCESS_SEGNATURE, {
             expiresIn: "1h",
-            //! jwtid:createOtp()
-            jwtid: "555",
+            jwtid: (0, createOtp_1.createOtp)(),
         });
         const refreshToken = (0, jwt_1.createJwt)({ userId: user._id, userEmail: user.email }, process.env.REFRESH_SEGNATURE, {
             expiresIn: "7d",
-            //! jwtid:createOtp()
-            jwtid: "555",
+            jwtid: (0, createOtp_1.createOtp)(),
         });
         return (0, successHandler_1.successHandler)({
             res,
@@ -90,13 +85,11 @@ class AuthServices {
         // step: create token
         const accessToken = (0, jwt_1.createJwt)({ userId: user._id, userEmail: user.email }, process.env.ACCESS_SEGNATURE, {
             expiresIn: "1h",
-            //! jwtid:createOtp()
-            jwtid: "555",
+            jwtid: (0, createOtp_1.createOtp)(),
         });
         const refreshToken = (0, jwt_1.createJwt)({ userId: user._id, userEmail: user.email }, process.env.REFRESH_SEGNATURE, {
             expiresIn: "7d",
-            //! jwtid:createOtp()
-            jwtid: "555",
+            jwtid: (0, createOtp_1.createOtp)(),
         });
         return (0, successHandler_1.successHandler)({
             res,
@@ -106,8 +99,7 @@ class AuthServices {
     };
     // refresh-token
     refreshToken = async (req, res, next) => {
-        //! const { authorization } = req.headers;
-        //! why last line output error
+        //! const { authorization } = req.headers; why this line cause error
         const authorization = req.headers.authorization;
         // step: check authorization
         if (!authorization) {
@@ -123,8 +115,8 @@ class AuthServices {
             userId: payload.userId,
             userEmail: payload.userEmail,
         };
-        //! const jwtid = createOtp();
-        const jwtid = "666";
+        const jwtid = (0, createOtp_1.createOtp)();
+        // const jwtid = "666";
         const accessToken = (0, jwt_1.createJwt)(newPayload, process.env.ACCESS_SEGNATURE, {
             expiresIn: "1h",
             jwtid,
@@ -190,6 +182,72 @@ class AuthServices {
             message: "New email confirmed successfully",
         });
     };
+    // updateEmail
+    updateEmail = async (req, res, next) => {
+        const user = res.locals.user;
+        const { newEmail } = req.body;
+        // step: check if email confirmed
+        if (!user.emailConfirmed) {
+            return (0, successHandler_1.successHandler)({
+                res,
+                message: "Please confirm email to update it",
+                status: 400,
+            });
+        }
+        // step: send otp to current email
+        const otpCodeForCurrentEmail = (0, createOtp_1.createOtp)();
+        const { isEmailSended } = await (0, send_email_1.sendEmail)({
+            to: user.email,
+            subject: "SocialApp",
+            html: (0, generateHTML_1.template)({
+                otpCode: otpCodeForCurrentEmail,
+                receiverName: user.firstName,
+                subject: "Some one try to change your email! is that you?",
+            }),
+        });
+        if (!isEmailSended) {
+            return (0, successHandler_1.successHandler)({
+                res,
+                message: "Error while checking email",
+                status: 400,
+            });
+        }
+        // step: send otp to new email
+        const otpCodeForNewEmail = (0, createOtp_1.createOtp)();
+        const resultOfSendEmail = await (0, send_email_1.sendEmail)({
+            to: newEmail,
+            subject: "SocialApp",
+            html: (0, generateHTML_1.template)({
+                otpCode: otpCodeForNewEmail,
+                receiverName: user.firstName,
+                subject: "Confirm new email",
+            }),
+        });
+        if (!resultOfSendEmail.isEmailSended) {
+            return (0, successHandler_1.successHandler)({
+                res,
+                message: "Error while checking email",
+                status: 400,
+            });
+        }
+        // step: save emailOtp, newEmail and newEmailOtp
+        const updatedUser = await this.userModel.findOneAndUpdate({
+            filter: { _id: user._id },
+            data: {
+                $set: {
+                    "emailOtp.otp": otpCodeForCurrentEmail,
+                    "emialOtp.expiresIn": new Date(Date.now() + 5 * 60 * 1000),
+                    newEmail,
+                    "newEmailOtp.otp": otpCodeForNewEmail,
+                    "newEmailOtp.expiresIn": new Date(Date.now() + 5 * 60 * 1000),
+                },
+            },
+        });
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "OTP sended for current email and new email, please confirm new email to save updates",
+        });
+    };
     // resendEmailOtp
     resendEmailOtp = async (req, res, next) => {
         const { email } = req.body;
@@ -204,11 +262,11 @@ class AuthServices {
             throw new Errors_1.ApplicationExpection("Your OTP not expired yet", 400);
         }
         // step: send otp to email
-        //! const otpCode = createOtp();
-        const otpCode = "555";
+        const otpCode = (0, createOtp_1.createOtp)();
+        // const otpCode = "555";
         const { isEmailSended, info } = await (0, send_email_1.sendEmail)({
             to: email,
-            subject: "ECommerceApp",
+            subject: "SocialApp",
             html: (0, generateHTML_1.template)({
                 otpCode,
                 receiverName: user.firstName,
@@ -272,8 +330,8 @@ class AuthServices {
             throw new Errors_1.ApplicationExpection("Your OTP not expired yet", 400);
         }
         // step: send otp to email
-        // !const otpCode=createOtp()
-        const otpCode = "555";
+        const otpCode = (0, createOtp_1.createOtp)();
+        // const otpCode = "555";
         const { isEmailSended, info } = await (0, send_email_1.sendEmail)({
             to: user.email,
             subject: "Reset password OTP",
