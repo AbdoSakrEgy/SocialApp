@@ -6,6 +6,7 @@ class DBRepo {
     constructor(model) {
         this.model = model;
     }
+    // ============================ findOne ============================
     findOne = async ({ filter, projection, options, }) => {
         // step: check if lean true, it will prevent virtuals to appear in ruselt
         if (options?.lean) {
@@ -15,6 +16,7 @@ class DBRepo {
         const doc = await this.model.findOne(filter, projection, options);
         return doc;
     };
+    // ============================ find ============================
     find = async ({ filter, projection, options, }) => {
         // step: check if lean true, it will prevent virtuals to appear in ruselt
         if (options?.lean) {
@@ -24,6 +26,7 @@ class DBRepo {
         const doc = await this.model.find(filter, projection, options);
         return doc;
     };
+    // ============================ create ============================
     create = async ({ data, }) => {
         const doc = await this.model.create(data);
         return doc;
@@ -37,6 +40,7 @@ class DBRepo {
         const doc = await this.model.findOneAndUpdate(filter, data, options);
         return doc;
     };
+    // ============================ findOneAndDelete ============================
     findOneAndDelete = async ({ filter, options, }) => {
         // step: check if lean true, it will prevent virtuals to appear in ruselt
         if (options?.lean) {

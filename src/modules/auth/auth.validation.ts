@@ -1,4 +1,4 @@
-import z, { email } from "zod";
+import z from "zod";
 import { Gender, Role } from "../user/user.model.js";
 
 export const registerSchema = z

@@ -43,7 +43,7 @@ export class AuthServices implements IAuthServcies {
 
   constructor() {}
 
-  // register
+  // ============================ register ============================
   register = async (
     req: Request,
     res: Response,
@@ -113,7 +113,7 @@ export class AuthServices implements IAuthServcies {
     });
   };
 
-  // login
+  // ============================ login ============================
   login = async (
     req: Request,
     res: Response,
@@ -153,7 +153,7 @@ export class AuthServices implements IAuthServcies {
     });
   };
 
-  // refresh-token
+  // ============================ refresh-token ============================
   refreshToken = async (
     req: Request,
     res: Response,
@@ -188,7 +188,7 @@ export class AuthServices implements IAuthServcies {
     return successHandler({ res, result: { accessToken } });
   };
 
-  // confirmEmail
+  // ============================ confirmEmail ============================
   confirmEmail = async (
     req: Request,
     res: Response,
@@ -253,7 +253,7 @@ export class AuthServices implements IAuthServcies {
     });
   };
 
-  // updateEmail
+  // ============================ updateEmail ============================
   updateEmail = async (
     req: Request,
     res: Response,
@@ -325,7 +325,7 @@ export class AuthServices implements IAuthServcies {
     });
   };
 
-  // resendEmailOtp
+  // ============================ resendEmailOtp ============================
   resendEmailOtp = async (
     req: Request,
     res: Response,
@@ -372,7 +372,7 @@ export class AuthServices implements IAuthServcies {
     return successHandler({ res, message: "OTP sended successfully" });
   };
 
-  // updatePassword
+  // ============================ updatePassword ============================
   updatePassword = async (
     req: Request,
     res: Response,
@@ -406,7 +406,7 @@ export class AuthServices implements IAuthServcies {
     });
   };
 
-  // forgetPassword
+  // ============================ forgetPassword ============================
   forgetPassword = async (
     req: Request,
     res: Response,
@@ -454,7 +454,7 @@ export class AuthServices implements IAuthServcies {
     });
   };
 
-  // changePassword
+  // ============================ changePassword ============================
   changePassword = async (
     req: Request,
     res: Response,
@@ -486,7 +486,7 @@ export class AuthServices implements IAuthServcies {
     });
   };
 
-  // logout
+  // ============================ logout ============================
   logout = async (
     req: Request,
     res: Response,

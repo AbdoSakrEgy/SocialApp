@@ -27,8 +27,8 @@ const userSchema = new mongoose_1.Schema({
     lastName: {
         type: String,
         trim: true,
-        minlength: [3, "First name must be at least 3 characters"],
-        maxlength: [20, "First name cannot exceed 20 characters"],
+        minlength: [3, "Last name must be at least 3 characters"],
+        maxlength: [20, "Last name cannot exceed 20 characters"],
         required: true,
     },
     age: {
@@ -105,24 +105,38 @@ const userSchema = new mongoose_1.Schema({
     },
     // others
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
-// Mongoose lifecycle
-// for create/save
+// virtuals
+userSchema.virtual("fullName").get(function () {
+    return `${this.firstName} ${this.lastName}`;
+});
+// Middleware (hooks) for hashing sensitive fields
+// pre save
 userSchema.pre("save", async function (next) {
-    // only hash if it's new
-    if (this.emailOtp?.otp && this.isModified("emailOtp.otp")) {
-        this.emailOtp.otp = await (0, bcrypt_1.hash)(this.emailOtp.otp);
+    this.isFirstCreation = this.isNew;
+    if (this.emailOtp && this.isModified("emailOtp")) {
+        this.emailOtp = {
+            otp: await (0, bcrypt_1.hash)(this.emailOtp?.otp),
+            expiresIn: this.emailOtp?.expiresIn,
+        };
     }
-    if (this.newEmailOtp?.otp && this.isModified("newEmailOtp.otp")) {
-        this.newEmailOtp.otp = await (0, bcrypt_1.hash)(this.newEmailOtp.otp);
+    if (this.newEmailOtp && this.isModified("newEmailOtp")) {
+        this.newEmailOtp = {
+            otp: await (0, bcrypt_1.hash)(this.newEmailOtp?.otp),
+            expiresIn: this.newEmailOtp?.expiresIn,
+        };
     }
     if (this.password && this.isModified("password")) {
         this.password = await (0, bcrypt_1.hash)(this.password);
     }
-    if (this.passwordOtp?.otp && this.isModified("passwordOtp.otp")) {
-        this.passwordOtp.otp = await (0, bcrypt_1.hash)(this.passwordOtp.otp);
+    if (this.passwordOtp && this.isModified("passwordOtp")) {
+        this.passwordOtp = {
+            otp: await (0, bcrypt_1.hash)(this.passwordOtp?.otp),
+            expiresIn: this.passwordOtp?.expiresIn,
+        };
     }
 });
-// for findOneAndUpdate
+// pre findOneAndUpdate
+//! I am not understand this code
 userSchema.pre("findOneAndUpdate", async function (next) {
     try {
         const update = this.getUpdate();
@@ -151,5 +165,11 @@ userSchema.pre("findOneAndUpdate", async function (next) {
     catch (error) {
         return next(error);
     }
+});
+// post save
+userSchema.post("save", async function (doc, next) {
+    // 'this' already has the passed data, but will not appear if logged it
+    const that = this;
+    console.log({ isFirstCreation: that.isFirstCreation, that: that });
 });
 exports.UserModel = (0, mongoose_1.model)("user", userSchema);

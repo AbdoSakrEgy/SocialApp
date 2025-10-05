@@ -14,7 +14,7 @@ class AuthServices {
     // private userModel = new DBRepo(UserModel);
     userModel = new user_repo_1.UserRepo();
     constructor() { }
-    // register
+    // ============================ register ============================
     register = async (req, res, next) => {
         const { firstName, lastName, email, password } = req.body;
         // step: check user existance
@@ -70,7 +70,7 @@ class AuthServices {
             result: { accessToken, refreshToken },
         });
     };
-    // login
+    // ============================ login ============================
     login = async (req, res, next) => {
         const { email, password } = req.body;
         // step: check credentials
@@ -97,7 +97,7 @@ class AuthServices {
             result: { accessToken, refreshToken },
         });
     };
-    // refresh-token
+    // ============================ refresh-token ============================
     refreshToken = async (req, res, next) => {
         //! const { authorization } = req.headers; why this line cause error
         const authorization = req.headers.authorization;
@@ -123,7 +123,7 @@ class AuthServices {
         });
         return (0, successHandler_1.successHandler)({ res, result: { accessToken } });
     };
-    // confirmEmail
+    // ============================ confirmEmail ============================
     confirmEmail = async (req, res, next) => {
         const { email, firstOtp, secondOtp } = req.body;
         // step: check user exitance
@@ -182,7 +182,7 @@ class AuthServices {
             message: "New email confirmed successfully",
         });
     };
-    // updateEmail
+    // ============================ updateEmail ============================
     updateEmail = async (req, res, next) => {
         const user = res.locals.user;
         const { newEmail } = req.body;
@@ -248,7 +248,7 @@ class AuthServices {
             message: "OTP sended for current email and new email, please confirm new email to save updates",
         });
     };
-    // resendEmailOtp
+    // ============================ resendEmailOtp ============================
     resendEmailOtp = async (req, res, next) => {
         const { email } = req.body;
         // step: check email existance
@@ -290,7 +290,7 @@ class AuthServices {
         });
         return (0, successHandler_1.successHandler)({ res, message: "OTP sended successfully" });
     };
-    // updatePassword
+    // ============================ updatePassword ============================
     updatePassword = async (req, res, next) => {
         const user = res.locals.user;
         const { currentPassword, newPassword } = req.body;
@@ -316,7 +316,7 @@ class AuthServices {
             message: "Password updated successfully, please login again",
         });
     };
-    // forgetPassword
+    // ============================ forgetPassword ============================
     forgetPassword = async (req, res, next) => {
         const { email } = req.body;
         // step: check email existance
@@ -359,7 +359,7 @@ class AuthServices {
             message: "OTP sended to email, please use it to restart your password",
         });
     };
-    // changePassword
+    // ============================ changePassword ============================
     changePassword = async (req, res, next) => {
         const { email, otp, newPassword } = req.body;
         // step: check email existance
@@ -386,7 +386,7 @@ class AuthServices {
             message: "Password changed successfully, You have to login",
         });
     };
-    // logout
+    // ============================ logout ============================
     logout = async (req, res, next) => {
         const user = res.locals.user;
         // step: change credentialsChangedAt

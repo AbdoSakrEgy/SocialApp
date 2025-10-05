@@ -1,6 +1,7 @@
-import { model, Schema, Types } from "mongoose";
+import { HydratedDocument, model, Schema, Types } from "mongoose";
 import { hash } from "../../utils/bcrypt";
 import { decrypt, encrypt } from "../../utils/crypto";
+import { ApplicationExpection } from "../../utils/Errors";
 
 export interface IUser {
   firstName: string;
@@ -28,7 +29,9 @@ export interface IUser {
   credentialsChangedAt: Date;
   isActive: boolean;
   deletedBy: object;
+  extra: { name: String };
 }
+
 export const Gender = {
   male: "male",
   female: "female",
@@ -54,8 +57,8 @@ const userSchema = new Schema<IUser>(
     lastName: {
       type: String,
       trim: true,
-      minlength: [3, "First name must be at least 3 characters"],
-      maxlength: [20, "First name cannot exceed 20 characters"],
+      minlength: [3, "Last name must be at least 3 characters"],
+      maxlength: [20, "Last name cannot exceed 20 characters"],
       required: true,
     },
     age: {
@@ -134,26 +137,46 @@ const userSchema = new Schema<IUser>(
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
-
-// Mongoose lifecycle
-// for create/save
-userSchema.pre("save", async function (next) {
-  // only hash if it's new
-  if (this.emailOtp?.otp && this.isModified("emailOtp.otp")) {
-    this.emailOtp.otp = await hash(this.emailOtp.otp);
-  }
-  if (this.newEmailOtp?.otp && this.isModified("newEmailOtp.otp")) {
-    this.newEmailOtp.otp = await hash(this.newEmailOtp.otp);
-  }
-  if (this.password && this.isModified("password")) {
-    this.password = await hash(this.password);
-  }
-  if (this.passwordOtp?.otp && this.isModified("passwordOtp.otp")) {
-    this.passwordOtp.otp = await hash(this.passwordOtp.otp);
-  }
+// virtuals
+userSchema.virtual("fullName").get(function () {
+  return `${this.firstName} ${this.lastName}`;
 });
 
-// for findOneAndUpdate
+// Middleware (hooks) for hashing sensitive fields
+// pre save
+userSchema.pre(
+  "save",
+  async function (
+    this: HydratedDocument<IUser> & { isFirstCreation: boolean },
+    next
+  ) {
+    this.isFirstCreation = this.isNew;
+    if (this.emailOtp && this.isModified("emailOtp")) {
+      this.emailOtp = {
+        otp: await hash(this.emailOtp?.otp),
+        expiresIn: this.emailOtp?.expiresIn,
+      };
+    }
+    if (this.newEmailOtp && this.isModified("newEmailOtp")) {
+      this.newEmailOtp = {
+        otp: await hash(this.newEmailOtp?.otp),
+        expiresIn: this.newEmailOtp?.expiresIn,
+      };
+    }
+    if (this.password && this.isModified("password")) {
+      this.password = await hash(this.password);
+    }
+    if (this.passwordOtp && this.isModified("passwordOtp")) {
+      this.passwordOtp = {
+        otp: await hash(this.passwordOtp?.otp),
+        expiresIn: this.passwordOtp?.expiresIn,
+      };
+    }
+  }
+);
+
+// pre findOneAndUpdate
+//! I am not understand this code
 userSchema.pre("findOneAndUpdate", async function (next) {
   try {
     const update: any = this.getUpdate();
@@ -187,6 +210,13 @@ userSchema.pre("findOneAndUpdate", async function (next) {
   } catch (error) {
     return next(error as any);
   }
+});
+
+// post save
+userSchema.post("save", async function (doc, next) {
+  // 'this' already has the passed data, but will not appear if logged it
+  const that = this as HydratedDocument<IUser> & { isFirstCreation: boolean };
+  console.log({ isFirstCreation: that.isFirstCreation, that: that });
 });
 
 export const UserModel = model<IUser>("user", userSchema);

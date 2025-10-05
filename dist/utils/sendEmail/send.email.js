@@ -9,15 +9,14 @@ const sendEmail = async ({ to, subject, html, }) => {
         secure: true,
         service: "gmail",
         auth: {
-            user: "abdelraheemsakr@gmail.com",
-            pass: "cazaatnqxqtpuhys",
+            user: process.env.SENDER_EMAIL,
+            pass: process.env.GOOGLE_APP_PASSWORD,
         },
         // tls: {
         //   rejectUnauthorized: false, // Only for development
         // },
     });
     try {
-        console.log("0");
         const info = await transporter.sendMail({
             from: `"SochialApp" <${process.env.SENDER_EMAIL}>`, // sender address
             to, // list of receivers

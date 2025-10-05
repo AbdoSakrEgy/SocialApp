@@ -10,7 +10,7 @@ import {
 
 export class DBRepo<T> {
   constructor(protected model: Model<T>) {}
-
+  // ============================ findOne ============================
   findOne = async ({
     filter,
     projection,
@@ -30,7 +30,7 @@ export class DBRepo<T> {
     const doc = await this.model.findOne(filter, projection, options);
     return doc;
   };
-
+  // ============================ find ============================
   find = async ({
     filter,
     projection,
@@ -39,7 +39,9 @@ export class DBRepo<T> {
     filter: FilterQuery<T>;
     projection?: ProjectionFields<T>;
     options?: QueryOptions;
-  }): Promise<HydratedDocument<T>[]> => {
+  }): Promise<
+    HydratedDocument<T>[] | null | FlattenMaps<HydratedDocument<T>[]> | []
+  > => {
     // step: check if lean true, it will prevent virtuals to appear in ruselt
     if (options?.lean) {
       await this.model.find(filter, projection, options).lean(true);
@@ -48,7 +50,7 @@ export class DBRepo<T> {
     const doc = await this.model.find(filter, projection, options);
     return doc;
   };
-
+  // ============================ create ============================
   create = async ({
     data,
   }: {
@@ -75,7 +77,7 @@ export class DBRepo<T> {
     const doc = await this.model.findOneAndUpdate(filter, data, options);
     return doc;
   };
-
+  // ============================ findOneAndDelete ============================
   findOneAndDelete = async ({
     filter,
     options,
