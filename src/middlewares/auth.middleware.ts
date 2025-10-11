@@ -2,7 +2,11 @@ import { NextFunction, Request, Response } from "express";
 import { decodeToken, tokenTypes } from "../utils/decodeToken.js";
 import { ApplicationExpection } from "../utils/Errors.js";
 
-export const auth = async (req: Request, res: Response, next: NextFunction) => {
+export const auth = async (
+  req: Request | any,
+  res: Response,
+  next: NextFunction
+) => {
   // check: authorization
   const { authorization } = req.headers;
   if (!authorization) {
@@ -12,8 +16,10 @@ export const auth = async (req: Request, res: Response, next: NextFunction) => {
     authorization,
     tokenType: tokenTypes.access,
   });
-  // step: modify req
+  // step: modify res.locals
   res.locals.user = user;
   res.locals.payload = payload;
+  // step: modify req for multer.local.upload
+  req.user = user;
   return next();
 };

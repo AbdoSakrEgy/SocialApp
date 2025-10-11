@@ -308,6 +308,7 @@ class AuthServices {
             data: {
                 $set: {
                     password: newPassword,
+                    credentialsChangedAt: new Date(Date.now()),
                 },
             },
         });

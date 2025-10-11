@@ -8,6 +8,8 @@ export const validation = (shcema: ZodObject) => {
       ...req.body,
       ...req.params,
       ...req.query,
+      attachment: req.file,
+      attachments: req.files,
     };
     const result = shcema.safeParse(data);
     if (result.success) {

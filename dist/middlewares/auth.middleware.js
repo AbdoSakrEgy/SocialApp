@@ -13,9 +13,11 @@ const auth = async (req, res, next) => {
         authorization,
         tokenType: decodeToken_js_1.tokenTypes.access,
     });
-    // step: modify req
+    // step: modify res.locals
     res.locals.user = user;
     res.locals.payload = payload;
+    // step: modify req for multer.local.upload
+    req.user = user;
     return next();
 };
 exports.auth = auth;

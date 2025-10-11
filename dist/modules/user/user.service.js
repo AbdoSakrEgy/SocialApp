@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserServices = void 0;
 const successHandler_1 = require("../../utils/successHandler");
 const user_repo_1 = require("./user.repo");
+const S3_services_1 = require("../../utils/multer/S3.services");
 class UserServices {
     // private userModel = new DBRepo(UserModel);
     userModel = new user_repo_1.UserRepo();
@@ -12,14 +13,15 @@ class UserServices {
         const user = res.locals.user;
         return (0, successHandler_1.successHandler)({ res, result: user });
     };
-    // ============================ localUploadProfileImage ============================
-    // localUploadProfileImage = async (
-    //   req: Request,
-    //   res: Response,
-    //   next: NextFunction
-    // ): Promise<Response> => {
-    //   return successHandler({ res, result: { file: req.file } });
-    // };
+    // ============================ uploadProfileImage ============================
+    uploadProfileImage = async (req, res, next) => {
+        const path = await (0, S3_services_1.uploadFileS3)({ file: req.file });
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "Image uploaded successfully",
+            result: { path },
+        });
+    };
     // ============================ updateBasicInfo ============================
     updateBasicInfo = async (req, res, next) => {
         const user = res.locals.user;

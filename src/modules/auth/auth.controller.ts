@@ -13,7 +13,6 @@ import {
 } from "./auth.validation";
 import { auth } from "../../middlewares/auth.middleware";
 const router = Router();
-
 const authServices = new AuthServices();
 
 router.post("/register", validation(registerSchema), authServices.register);

@@ -25,7 +25,17 @@ import { UserRepo } from "../user/user.repo";
 interface IAuthServcies {
   register(req: Request, res: Response, next: NextFunction): Promise<Response>;
   login(req: Request, res: Response, next: NextFunction): Promise<Response>;
+  refreshToken(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
   confirmEmail(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  updateEmail(
     req: Request,
     res: Response,
     next: NextFunction
@@ -35,6 +45,22 @@ interface IAuthServcies {
     res: Response,
     next: NextFunction
   ): Promise<Response>;
+  updatePassword(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  forgetPassword(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  changePassword(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  logout(req: Request, res: Response, next: NextFunction): Promise<Response>;
 }
 
 export class AuthServices implements IAuthServcies {
@@ -397,6 +423,7 @@ export class AuthServices implements IAuthServcies {
       data: {
         $set: {
           password: newPassword,
+          credentialsChangedAt: new Date(Date.now()),
         },
       },
     });

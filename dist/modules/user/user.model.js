@@ -136,23 +136,22 @@ userSchema.pre("save", async function (next) {
     }
 });
 // pre findOneAndUpdate
-//! I am not understand this code
 userSchema.pre("findOneAndUpdate", async function (next) {
     try {
         const update = this.getUpdate();
+        console.log(update);
         if (!update)
             return next();
         // Normalize to $set for easier handling
         const $set = update.$set || update;
-        if ($set.password) {
-            $set.password = await (0, bcrypt_1.hash)($set.password);
-            // $set.credentialsChangedAt = new Date(Date.now());
-        }
         if ($set["emailOtp.otp"]) {
             $set["emailOtp.otp"] = await (0, bcrypt_1.hash)($set["emailOtp.otp"]);
         }
         if ($set["newEmailOtp.otp"]) {
             $set["newEmailOtp.otp"] = await (0, bcrypt_1.hash)($set["newEmailOtp.otp"]);
+        }
+        if ($set.password) {
+            $set.password = await (0, bcrypt_1.hash)($set.password);
         }
         if ($set["passwordOtp.otp"]) {
             $set["passwordOtp.otp"] = await (0, bcrypt_1.hash)($set["passwordOtp.otp"]);

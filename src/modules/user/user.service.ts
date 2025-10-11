@@ -4,6 +4,7 @@ import { successHandler } from "../../utils/successHandler";
 import { NextFunction, Request, Response } from "express";
 import { UserRepo } from "./user.repo";
 import { updateBasicInfoDTO } from "./user.dto";
+import { uploadFileS3 } from "../../utils/multer/S3.services";
 // import { UserRepo } from "./user.repo";
 
 interface IUserServices {}
@@ -24,14 +25,19 @@ export class UserServices implements IUserServices {
     return successHandler({ res, result: user });
   };
 
-  // ============================ localUploadProfileImage ============================
-  // localUploadProfileImage = async (
-  //   req: Request,
-  //   res: Response,
-  //   next: NextFunction
-  // ): Promise<Response> => {
-  //   return successHandler({ res, result: { file: req.file } });
-  // };
+  // ============================ uploadProfileImage ============================
+  uploadProfileImage = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const path = await uploadFileS3({ file: req.file as Express.Multer.File });
+    return successHandler({
+      res,
+      message: "Image uploaded successfully",
+      result: { path },
+    });
+  };
 
   // ============================ updateBasicInfo ============================
   updateBasicInfo = async (

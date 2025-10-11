@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.multerCloud = exports.fileTypes = exports.StoreIn = void 0;
+exports.multerUpload = exports.fileTypes = exports.StoreIn = void 0;
 const multer_1 = __importDefault(require("multer"));
 const Errors_1 = require("../Errors");
 var StoreIn;
@@ -15,7 +15,7 @@ exports.fileTypes = {
     image: ["image/jpg", "image/jpeg", "image/png", "image/gif", "image/webp"],
     video: ["video/mp4", "video/webm"],
 };
-const multerCloud = ({ sendedFileDest = "general", sendedFileType = exports.fileTypes.image, storeIn = StoreIn.memory, }) => {
+const multerUpload = ({ sendedFileDest = "general", sendedFileType = exports.fileTypes.image, storeIn = StoreIn.memory, }) => {
     const storage = storeIn == StoreIn.memory
         ? multer_1.default.memoryStorage()
         : multer_1.default.diskStorage({
@@ -41,4 +41,4 @@ const multerCloud = ({ sendedFileDest = "general", sendedFileType = exports.file
     };
     return (0, multer_1.default)({ storage, fileFilter });
 };
-exports.multerCloud = multerCloud;
+exports.multerUpload = multerUpload;
