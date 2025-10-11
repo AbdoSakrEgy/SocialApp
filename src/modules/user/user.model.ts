@@ -29,7 +29,8 @@ export interface IUser {
   credentialsChangedAt: Date;
   isActive: boolean;
   deletedBy: object;
-  extra: { name: String };
+  profileImage: string;
+  coverImages: string[];
 }
 
 export const Gender = {
@@ -134,6 +135,12 @@ const userSchema = new Schema<IUser>(
       type: Types.ObjectId,
     },
     // others
+    profileImage: {
+      type: String,
+    },
+    coverImages: {
+      type: [{ type: String }],
+    },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
@@ -179,7 +186,6 @@ userSchema.pre(
 userSchema.pre("findOneAndUpdate", async function (next) {
   try {
     const update: any = this.getUpdate();
-    console.log(update);
     if (!update) return next();
 
     // Normalize to $set for easier handling

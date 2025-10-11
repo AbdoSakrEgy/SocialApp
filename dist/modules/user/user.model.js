@@ -104,6 +104,12 @@ const userSchema = new mongoose_1.Schema({
         type: mongoose_1.Types.ObjectId,
     },
     // others
+    profileImage: {
+        type: String,
+    },
+    coverImages: {
+        type: [{ type: String }],
+    },
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 // virtuals
 userSchema.virtual("fullName").get(function () {
@@ -139,7 +145,6 @@ userSchema.pre("save", async function (next) {
 userSchema.pre("findOneAndUpdate", async function (next) {
     try {
         const update = this.getUpdate();
-        console.log(update);
         if (!update)
             return next();
         // Normalize to $set for easier handling

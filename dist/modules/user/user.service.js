@@ -15,11 +15,40 @@ class UserServices {
     };
     // ============================ uploadProfileImage ============================
     uploadProfileImage = async (req, res, next) => {
-        const path = await (0, S3_services_1.uploadFileS3)({ file: req.file });
+        const user = res.locals.user;
+        // step: upload image
+        const path = await (0, S3_services_1.uploadSingleFileS3)({
+            file: req.file,
+            path: "ProfileImages",
+        });
+        // step: update user
+        const updatedUser = await this.userModel.findOneAndUpdate({
+            filter: { _id: user._id },
+            data: { $set: { profileImage: path } },
+        });
         return (0, successHandler_1.successHandler)({
             res,
             message: "Image uploaded successfully",
             result: { path },
+        });
+    };
+    // ============================ uploadCoverImages ============================
+    uploadCoverImages = async (req, res, next) => {
+        const user = res.locals.user;
+        // step: upload images
+        const pathes = await (0, S3_services_1.uploadMultiFilesS3)({
+            files: req.files,
+            path: "CoverImages",
+        });
+        // step: update user
+        const updatedUser = await this.userModel.findOneAndUpdate({
+            filter: { _id: user._id },
+            data: { $set: { coverImages: pathes } },
+        });
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "Image uploaded successfully",
+            result: { pathes },
         });
     };
     // ============================ updateBasicInfo ============================

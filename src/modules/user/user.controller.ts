@@ -10,11 +10,17 @@ import { multerUpload } from "../../utils/multer/multer.upload";
 const userServices = new UserServices();
 
 router.get("/user-profile", auth, userServices.userProfile);
-router.post(
+router.patch(
   "/upload-profile-image",
   auth,
   multerUpload({}).single("image"),
   userServices.uploadProfileImage
+);
+router.patch(
+  "/upload-cover-images",
+  auth,
+  multerUpload({}).array("coverImages", 5),
+  userServices.uploadCoverImages
 );
 router.patch(
   "/update-basic-info",

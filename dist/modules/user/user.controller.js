@@ -9,6 +9,7 @@ const user_validation_1 = require("./user.validation");
 const multer_upload_1 = require("../../utils/multer/multer.upload");
 const userServices = new user_service_1.UserServices();
 router.get("/user-profile", auth_middleware_1.auth, userServices.userProfile);
-router.post("/upload-profile-image", auth_middleware_1.auth, (0, multer_upload_1.multerUpload)({}).single("image"), userServices.uploadProfileImage);
+router.patch("/upload-profile-image", auth_middleware_1.auth, (0, multer_upload_1.multerUpload)({}).single("image"), userServices.uploadProfileImage);
+router.patch("/upload-cover-images", auth_middleware_1.auth, (0, multer_upload_1.multerUpload)({}).array("coverImages", 5), userServices.uploadCoverImages);
 router.patch("/update-basic-info", auth_middleware_1.auth, (0, validation_middleware_1.validation)(user_validation_1.updateBasicInfoSchema), userServices.updateBasicInfo);
 exports.default = router;
