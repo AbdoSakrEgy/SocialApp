@@ -107,6 +107,12 @@ const userSchema = new mongoose_1.Schema({
     profileImage: {
         type: String,
     },
+    profileVideo: {
+        type: String,
+    },
+    avatarImage: {
+        type: String,
+    },
     coverImages: {
         type: [{ type: String }],
     },

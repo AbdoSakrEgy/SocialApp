@@ -8,3 +8,18 @@ export const updateBasicInfoSchema = z.object({
   gender: z.literal([Gender.male, Gender.female]).optional(),
   phone: z.string().optional(),
 });
+
+export const uploadAvatarImageSchema = z.object({
+  fileName: z.string(),
+  fileType: z.string(),
+});
+
+export const getFileFromKeyPreSignedURLSchema = z.object({
+  download: z.boolean(),
+  downloadName: z.string().optional(),
+});
+
+export const deleteFilesUsingKeySchema = z.object({
+  Keys: z.array(z.string()),
+  Quiet: z.boolean().optional(),
+});

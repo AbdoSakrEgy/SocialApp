@@ -30,6 +30,8 @@ export interface IUser {
   isActive: boolean;
   deletedBy: object;
   profileImage: string;
+  profileVideo: string;
+  avatarImage: string;
   coverImages: string[];
 }
 
@@ -136,6 +138,12 @@ const userSchema = new Schema<IUser>(
     },
     // others
     profileImage: {
+      type: String,
+    },
+    profileVideo: {
+      type: String,
+    },
+    avatarImage: {
       type: String,
     },
     coverImages: {
