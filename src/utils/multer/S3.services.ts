@@ -147,8 +147,58 @@ export const uploadMultiFilesS3 = async ({
   // return keys;
 };
 
-// ============================ createPreSignedURLS3 ============================
-export const createPreSignedURLS3 = async ({
+// ============================ getFileS3 ============================
+export const getFileS3 = async ({
+  Bucket = process.env.BUCKET_NAME as string,
+  Key,
+}: {
+  Bucket?: string;
+  Key?: string;
+}): Promise<GetObjectCommandOutput> => {
+  const command = new GetObjectCommand({ Bucket, Key });
+  const fileObject = await S3Config().send(command);
+  return fileObject;
+};
+
+// ============================ deleteFileS3 ============================
+export const deleteFileS3 = async ({
+  Bucket = process.env.BUCKET_NAME as string,
+  Key,
+}: {
+  Bucket?: string;
+  Key?: string;
+}): Promise<DeleteObjectCommandOutput> => {
+  const command = new DeleteObjectCommand({ Bucket, Key });
+  const result = await S3Config().send(command);
+  return result;
+};
+
+// ============================ deleteMultiFilesS3 ============================
+export const deleteMultiFilesS3 = async ({
+  Bucket = process.env.BUCKET_NAME as string,
+  Keys,
+  Quiet = false, // false => returns Deleted[] and Errors[] true => returns only Errors[]
+}: {
+  Bucket?: string;
+  Keys?: string[];
+  Quiet?: boolean | undefined;
+}): Promise<DeleteObjectCommandOutput> => {
+  const Objects = Keys?.map((Key) => {
+    return { Key };
+  });
+  const command = new DeleteObjectsCommand({
+    Bucket,
+    Delete: {
+      Objects,
+      Quiet,
+    },
+  });
+  const result = await S3Config().send(command);
+  return result;
+};
+
+// ============================ createPreSignedUrlToUploadFileS3 ============================
+export const createPreSignedUrlToUploadFileS3 = async ({
   Bucket = process.env.BUCKET_NAME as string,
   ACL = "private",
   dest = "general",
@@ -172,26 +222,13 @@ export const createPreSignedURLS3 = async ({
 
   const url = await getSignedUrl(S3Config(), command, { expiresIn });
   if (!url || !command.input.Key) {
-    throw new ApplicationExpection("Fail to generate preSignedURL", 500);
+    throw new ApplicationExpection("Failed to generate preSignedURL", 500);
   }
   return { url, Key: command.input.Key };
 };
 
-// ============================ getS3File ============================
-export const getS3File = async ({
-  Bucket = process.env.BUCKET_NAME as string,
-  Key,
-}: {
-  Bucket?: string;
-  Key?: string;
-}): Promise<GetObjectCommandOutput> => {
-  const command = new GetObjectCommand({ Bucket, Key });
-  const result = await S3Config().send(command);
-  return result;
-};
-
-// ============================ createGetPreSignedURLS3 ============================
-export const createGetPreSignedURLS3 = async ({
+// ============================ createPresignedUrlToGetFileS3 ============================
+export const createPresignedUrlToGetFileS3 = async ({
   Bucket = process.env.BUCKET_NAME as string,
   Key,
   downloadName = "dumy",
@@ -200,7 +237,7 @@ export const createGetPreSignedURLS3 = async ({
 }: {
   Bucket?: string;
   Key: string;
-  downloadName?: string | undefined;
+  downloadName?: string;
   download?: boolean;
   expiresIn?: number;
 }): Promise<string> => {
@@ -216,41 +253,4 @@ export const createGetPreSignedURLS3 = async ({
     throw new ApplicationExpection("Failed to generate preSignedURL", 500);
   }
   return url;
-};
-
-// ============================ deleteS3File ============================
-export const deleteS3File = async ({
-  Bucket = process.env.BUCKET_NAME as string,
-  Key,
-}: {
-  Bucket?: string;
-  Key?: string;
-}): Promise<DeleteObjectCommandOutput> => {
-  const command = new DeleteObjectCommand({ Bucket, Key });
-  const result = await S3Config().send(command);
-  return result;
-};
-
-// ============================ deleteS3Files ============================
-export const deleteS3Files = async ({
-  Bucket = process.env.BUCKET_NAME as string,
-  Keys,
-  Quiet = false,
-}: {
-  Bucket?: string;
-  Keys?: string[];
-  Quiet?: boolean | undefined;
-}): Promise<DeleteObjectCommandOutput> => {
-  const Objects = Keys?.map((Key) => {
-    return { Key };
-  });
-  const command = new DeleteObjectsCommand({
-    Bucket,
-    Delete: {
-      Objects,
-      Quiet,
-    },
-  });
-  const result = await S3Config().send(command);
-  return result;
 };

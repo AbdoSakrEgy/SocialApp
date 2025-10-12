@@ -4,20 +4,20 @@ import { successHandler } from "../../utils/successHandler";
 import { NextFunction, Request, Response } from "express";
 import { UserRepo } from "./user.repo";
 import {
-  deleteFilesUsingKeyDTO,
-  getFileFromKeyPreSignedURLDTO,
+  deleteMultiFilesDTO,
+  createPresignedUrlToGetFileDTO,
   updateBasicInfoDTO,
   uploadAvatarImageDTO,
 } from "./user.dto";
 import {
-  createPreSignedURLS3,
+  createPreSignedUrlToUploadFileS3,
   uploadMultiFilesS3,
   uploadSingleSmallFileS3,
   uploadSingleLargeFileS3,
-  getS3File,
-  createGetPreSignedURLS3,
-  deleteS3File,
-  deleteS3Files,
+  getFileS3,
+  createPresignedUrlToGetFileS3,
+  deleteFileS3,
+  deleteMultiFilesS3,
 } from "../../utils/multer/S3.services";
 import { HydratedDocument } from "mongoose";
 import { StoreIn } from "../../utils/multer/multer.upload";
@@ -101,7 +101,7 @@ export class UserServices implements IUserServices {
     const user = res.locals.user as HydratedDocument<IUser>;
     const { fileName, fileType }: uploadAvatarImageDTO = req.body;
     // step: upload image
-    const { url, Key } = await createPreSignedURLS3({
+    const { url, Key } = await createPreSignedUrlToUploadFileS3({
       dest: `${user.firstName}/avatarImage`,
       fileName,
       ContentType: fileType,
@@ -143,18 +143,18 @@ export class UserServices implements IUserServices {
     });
   };
 
-  // ============================ getFileFromKey ============================
-  getFileFromKey = async (req: Request, res: Response, next: NextFunction) => {
+  // ============================ getFile ============================
+  getFile = async (req: Request, res: Response, next: NextFunction) => {
     const { downloadName } = req.query;
     const path = req.params.path as unknown as string[];
     const Key = path.join("/");
-    const s3response = await getS3File({ Key });
-    if (!s3response?.Body) {
-      throw new ApplicationExpection("Failed to get assets", 400);
+    const fileObject = await getFileS3({ Key });
+    if (!fileObject?.Body) {
+      throw new ApplicationExpection("Failed to get file", 400);
     }
     res.setHeader(
       "Content-Type",
-      `${s3response.ContentType}` || "application/octet-stream"
+      `${fileObject.ContentType}` || "application/octet-stream"
     );
     if (downloadName) {
       res.setHeader(
@@ -163,46 +163,53 @@ export class UserServices implements IUserServices {
       );
     }
     return await createS3WriteStreamPipe(
-      s3response.Body as NodeJS.ReadableStream,
+      fileObject.Body as NodeJS.ReadableStream,
       res
     );
   };
 
-  // ============================ getFileFromKeyPreSignedURL ============================
-  getFileFromKeyPreSignedURL = async (
+  // ============================ createPresignedUrlToGetFile ============================
+  createPresignedUrlToGetFile = async (
     req: Request,
     res: Response,
     next: NextFunction
   ) => {
-    const { download, downloadName }: getFileFromKeyPreSignedURLDTO = req.body;
+    const {
+      download = false,
+      downloadName = "dumy",
+    }: createPresignedUrlToGetFileDTO = req.body;
     const path = req.params.path as unknown as string[];
     const Key = path.join("/");
-    const url = await createGetPreSignedURLS3({ Key, download, downloadName });
-    return successHandler({ res, message: "URL of file", result: { url } });
+    const url = await createPresignedUrlToGetFileS3({
+      Key,
+      download,
+      downloadName,
+    });
+    return successHandler({
+      res,
+      message: "Use this URL to get file",
+      result: { url },
+    });
   };
 
-  // ============================ deleteFileUsingKey ============================
-  deleteFileUsingKey = async (
-    req: Request,
-    res: Response,
-    next: NextFunction
-  ) => {
+  // ============================ deleteFile ============================
+  deleteFile = async (req: Request, res: Response, next: NextFunction) => {
     const path = req.params.path as unknown as string[];
     const Key = path.join("/");
-    const result = await deleteS3File({ Key });
+    const result = await deleteFileS3({ Key });
     return successHandler({
       res,
       message: "File deleted successfully",
     });
   };
-  // ============================ deleteFilesUsingKey ============================
-  deleteFilesUsingKey = async (
+  // ============================ deleteMultiFiles ============================
+  deleteMultiFiles = async (
     req: Request,
     res: Response,
     next: NextFunction
   ) => {
-    const { Keys, Quiet = false }: deleteFilesUsingKeyDTO = req.body;
-    const result = await deleteS3Files({ Keys, Quiet });
+    const { Keys, Quiet = false }: deleteMultiFilesDTO = req.body;
+    const result = await deleteMultiFilesS3({ Keys, Quiet });
     return successHandler({
       res,
       message: "Files deleted successfully",

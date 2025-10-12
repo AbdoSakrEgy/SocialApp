@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteS3Files = exports.deleteS3File = exports.createGetPreSignedURLS3 = exports.getS3File = exports.createPreSignedURLS3 = exports.uploadMultiFilesS3 = exports.uploadSingleLargeFileS3 = exports.uploadSingleSmallFileS3 = void 0;
+exports.createPresignedUrlToGetFileS3 = exports.createPreSignedUrlToUploadFileS3 = exports.deleteMultiFilesS3 = exports.deleteFileS3 = exports.getFileS3 = exports.uploadMultiFilesS3 = exports.uploadSingleLargeFileS3 = exports.uploadSingleSmallFileS3 = void 0;
 const client_s3_1 = require("@aws-sdk/client-s3");
 const multer_upload_1 = require("./multer.upload");
 const fs_1 = require("fs");
@@ -102,53 +102,23 @@ const uploadMultiFilesS3 = async ({ Bucket = process.env.BUCKET_NAME, ACL = "pri
     // return keys;
 };
 exports.uploadMultiFilesS3 = uploadMultiFilesS3;
-// ============================ createPreSignedURLS3 ============================
-const createPreSignedURLS3 = async ({ Bucket = process.env.BUCKET_NAME, ACL = "private", dest = "general", fileName, ContentType, expiresIn = 5 * 60, }) => {
-    const command = new client_s3_1.PutObjectCommand({
-        Bucket,
-        ACL,
-        Key: `SocialApp/${dest}/${fileName}__${(0, nanoid_1.nanoid)(15)}`,
-        ContentType,
-    });
-    const url = await (0, s3_request_presigner_1.getSignedUrl)((0, S3_config_1.S3Config)(), command, { expiresIn });
-    if (!url || !command.input.Key) {
-        throw new Errors_1.ApplicationExpection("Fail to generate preSignedURL", 500);
-    }
-    return { url, Key: command.input.Key };
-};
-exports.createPreSignedURLS3 = createPreSignedURLS3;
-// ============================ getS3File ============================
-const getS3File = async ({ Bucket = process.env.BUCKET_NAME, Key, }) => {
+// ============================ getFileS3 ============================
+const getFileS3 = async ({ Bucket = process.env.BUCKET_NAME, Key, }) => {
     const command = new client_s3_1.GetObjectCommand({ Bucket, Key });
-    const result = await (0, S3_config_1.S3Config)().send(command);
-    return result;
+    const fileObject = await (0, S3_config_1.S3Config)().send(command);
+    return fileObject;
 };
-exports.getS3File = getS3File;
-// ============================ createGetPreSignedURLS3 ============================
-const createGetPreSignedURLS3 = async ({ Bucket = process.env.BUCKET_NAME, Key, downloadName = "dumy", download = false, expiresIn = 5 * 60, }) => {
-    const command = new client_s3_1.GetObjectCommand({
-        Bucket,
-        Key,
-        ResponseContentDisposition: download
-            ? `attachment; filename=${downloadName}`
-            : undefined,
-    });
-    const url = await (0, s3_request_presigner_1.getSignedUrl)((0, S3_config_1.S3Config)(), command, { expiresIn });
-    if (!url) {
-        throw new Errors_1.ApplicationExpection("Failed to generate preSignedURL", 500);
-    }
-    return url;
-};
-exports.createGetPreSignedURLS3 = createGetPreSignedURLS3;
-// ============================ deleteS3File ============================
-const deleteS3File = async ({ Bucket = process.env.BUCKET_NAME, Key, }) => {
+exports.getFileS3 = getFileS3;
+// ============================ deleteFileS3 ============================
+const deleteFileS3 = async ({ Bucket = process.env.BUCKET_NAME, Key, }) => {
     const command = new client_s3_1.DeleteObjectCommand({ Bucket, Key });
     const result = await (0, S3_config_1.S3Config)().send(command);
     return result;
 };
-exports.deleteS3File = deleteS3File;
-// ============================ deleteS3Files ============================
-const deleteS3Files = async ({ Bucket = process.env.BUCKET_NAME, Keys, Quiet = false, }) => {
+exports.deleteFileS3 = deleteFileS3;
+// ============================ deleteMultiFilesS3 ============================
+const deleteMultiFilesS3 = async ({ Bucket = process.env.BUCKET_NAME, Keys, Quiet = false, // false => returns Deleted[] and Errors[] true => returns only Errors[]
+ }) => {
     const Objects = Keys?.map((Key) => {
         return { Key };
     });
@@ -162,4 +132,35 @@ const deleteS3Files = async ({ Bucket = process.env.BUCKET_NAME, Keys, Quiet = f
     const result = await (0, S3_config_1.S3Config)().send(command);
     return result;
 };
-exports.deleteS3Files = deleteS3Files;
+exports.deleteMultiFilesS3 = deleteMultiFilesS3;
+// ============================ createPreSignedUrlToUploadFileS3 ============================
+const createPreSignedUrlToUploadFileS3 = async ({ Bucket = process.env.BUCKET_NAME, ACL = "private", dest = "general", fileName, ContentType, expiresIn = 5 * 60, }) => {
+    const command = new client_s3_1.PutObjectCommand({
+        Bucket,
+        ACL,
+        Key: `SocialApp/${dest}/${fileName}__${(0, nanoid_1.nanoid)(15)}`,
+        ContentType,
+    });
+    const url = await (0, s3_request_presigner_1.getSignedUrl)((0, S3_config_1.S3Config)(), command, { expiresIn });
+    if (!url || !command.input.Key) {
+        throw new Errors_1.ApplicationExpection("Failed to generate preSignedURL", 500);
+    }
+    return { url, Key: command.input.Key };
+};
+exports.createPreSignedUrlToUploadFileS3 = createPreSignedUrlToUploadFileS3;
+// ============================ createPresignedUrlToGetFileS3 ============================
+const createPresignedUrlToGetFileS3 = async ({ Bucket = process.env.BUCKET_NAME, Key, downloadName = "dumy", download = false, expiresIn = 5 * 60, }) => {
+    const command = new client_s3_1.GetObjectCommand({
+        Bucket,
+        Key,
+        ResponseContentDisposition: download
+            ? `attachment; filename=${downloadName}`
+            : undefined,
+    });
+    const url = await (0, s3_request_presigner_1.getSignedUrl)((0, S3_config_1.S3Config)(), command, { expiresIn });
+    if (!url) {
+        throw new Errors_1.ApplicationExpection("Failed to generate preSignedURL", 500);
+    }
+    return url;
+};
+exports.createPresignedUrlToGetFileS3 = createPresignedUrlToGetFileS3;

@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteFilesUsingKeySchema = exports.getFileFromKeyPreSignedURLSchema = exports.uploadAvatarImageSchema = exports.updateBasicInfoSchema = void 0;
+exports.deleteMultiFilesSchema = exports.createPresignedUrlToGetFileSchema = exports.uploadAvatarImageSchema = exports.updateBasicInfoSchema = void 0;
 const zod_1 = __importDefault(require("zod"));
 const user_model_1 = require("./user.model");
 exports.updateBasicInfoSchema = zod_1.default.object({
@@ -17,11 +17,11 @@ exports.uploadAvatarImageSchema = zod_1.default.object({
     fileName: zod_1.default.string(),
     fileType: zod_1.default.string(),
 });
-exports.getFileFromKeyPreSignedURLSchema = zod_1.default.object({
-    download: zod_1.default.boolean(),
+exports.createPresignedUrlToGetFileSchema = zod_1.default.object({
+    download: zod_1.default.boolean().optional(),
     downloadName: zod_1.default.string().optional(),
 });
-exports.deleteFilesUsingKeySchema = zod_1.default.object({
+exports.deleteMultiFilesSchema = zod_1.default.object({
     Keys: zod_1.default.array(zod_1.default.string()),
     Quiet: zod_1.default.boolean().optional(),
 });

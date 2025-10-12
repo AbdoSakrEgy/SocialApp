@@ -14,12 +14,12 @@ export const uploadAvatarImageSchema = z.object({
   fileType: z.string(),
 });
 
-export const getFileFromKeyPreSignedURLSchema = z.object({
-  download: z.boolean(),
+export const createPresignedUrlToGetFileSchema = z.object({
+  download: z.boolean().optional(),
   downloadName: z.string().optional(),
 });
 
-export const deleteFilesUsingKeySchema = z.object({
+export const deleteMultiFilesSchema = z.object({
   Keys: z.array(z.string()),
   Quiet: z.boolean().optional(),
 });

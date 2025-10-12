@@ -62,7 +62,7 @@ class UserServices {
         const user = res.locals.user;
         const { fileName, fileType } = req.body;
         // step: upload image
-        const { url, Key } = await (0, S3_services_1.createPreSignedURLS3)({
+        const { url, Key } = await (0, S3_services_1.createPreSignedUrlToUploadFileS3)({
             dest: `${user.firstName}/avatarImage`,
             fileName,
             ContentType: fileType,
@@ -97,43 +97,51 @@ class UserServices {
             result: { Keys },
         });
     };
-    // ============================ getFileFromKey ============================
-    getFileFromKey = async (req, res, next) => {
+    // ============================ getFile ============================
+    getFile = async (req, res, next) => {
         const { downloadName } = req.query;
         const path = req.params.path;
         const Key = path.join("/");
-        const s3response = await (0, S3_services_1.getS3File)({ Key });
-        if (!s3response?.Body) {
-            throw new Errors_1.ApplicationExpection("Failed to get assets", 400);
+        const fileObject = await (0, S3_services_1.getFileS3)({ Key });
+        if (!fileObject?.Body) {
+            throw new Errors_1.ApplicationExpection("Failed to get file", 400);
         }
-        res.setHeader("Content-Type", `${s3response.ContentType}` || "application/octet-stream");
+        res.setHeader("Content-Type", `${fileObject.ContentType}` || "application/octet-stream");
         if (downloadName) {
             res.setHeader("Content-Disposition", `attachment; filename=${downloadName}`);
         }
-        return await createS3WriteStreamPipe(s3response.Body, res);
+        return await createS3WriteStreamPipe(fileObject.Body, res);
     };
-    // ============================ getFileFromKeyPreSignedURL ============================
-    getFileFromKeyPreSignedURL = async (req, res, next) => {
-        const { download, downloadName } = req.body;
+    // ============================ createPresignedUrlToGetFile ============================
+    createPresignedUrlToGetFile = async (req, res, next) => {
+        const { download = false, downloadName = "dumy", } = req.body;
         const path = req.params.path;
         const Key = path.join("/");
-        const url = await (0, S3_services_1.createGetPreSignedURLS3)({ Key, download, downloadName });
-        return (0, successHandler_1.successHandler)({ res, message: "URL of file", result: { url } });
+        const url = await (0, S3_services_1.createPresignedUrlToGetFileS3)({
+            Key,
+            download,
+            downloadName,
+        });
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "Use this URL to get file",
+            result: { url },
+        });
     };
-    // ============================ deleteFileUsingKey ============================
-    deleteFileUsingKey = async (req, res, next) => {
+    // ============================ deleteFile ============================
+    deleteFile = async (req, res, next) => {
         const path = req.params.path;
         const Key = path.join("/");
-        const result = await (0, S3_services_1.deleteS3File)({ Key });
+        const result = await (0, S3_services_1.deleteFileS3)({ Key });
         return (0, successHandler_1.successHandler)({
             res,
             message: "File deleted successfully",
         });
     };
-    // ============================ deleteFilesUsingKey ============================
-    deleteFilesUsingKey = async (req, res, next) => {
+    // ============================ deleteMultiFiles ============================
+    deleteMultiFiles = async (req, res, next) => {
         const { Keys, Quiet = false } = req.body;
-        const result = await (0, S3_services_1.deleteS3Files)({ Keys, Quiet });
+        const result = await (0, S3_services_1.deleteMultiFilesS3)({ Keys, Quiet });
         return (0, successHandler_1.successHandler)({
             res,
             message: "Files deleted successfully",

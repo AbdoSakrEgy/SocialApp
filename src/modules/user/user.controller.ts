@@ -6,8 +6,8 @@ import { UserModel } from "./user.model";
 import { UserRepo } from "./user.repo";
 import { validation } from "../../middlewares/validation.middleware";
 import {
-  deleteFilesUsingKeySchema,
-  getFileFromKeyPreSignedURLSchema,
+  deleteMultiFilesSchema,
+  createPresignedUrlToGetFileSchema,
   updateBasicInfoSchema,
   uploadAvatarImageSchema,
 } from "./user.validation";
@@ -43,17 +43,17 @@ router.patch(
   userServices.uploadCoverImages
 );
 //! next api after use it from browser is generate => Error [ERR_HTTP_HEADERS_SENT]...
-router.get("/get-file-from-key/*path", userServices.getFileFromKey);
+router.get("/get-file/*path", userServices.getFile);
 router.get(
-  "/get-file-from-key-preSignedURL/*path",
-  validation(getFileFromKeyPreSignedURLSchema),
-  userServices.getFileFromKeyPreSignedURL
+  "/create-presignedUrl-toGetFile/*path",
+  validation(createPresignedUrlToGetFileSchema),
+  userServices.createPresignedUrlToGetFile
 );
-router.delete("/delete-file-using-key/*path", userServices.deleteFileUsingKey);
+router.delete("/delete-file/*path", userServices.deleteFile);
 router.delete(
-  "/delete-files-using-key",
-  validation(deleteFilesUsingKeySchema),
-  userServices.deleteFilesUsingKey
+  "/delete-multi-files",
+  validation(deleteMultiFilesSchema),
+  userServices.deleteMultiFiles
 );
 router.patch(
   "/update-basic-info",

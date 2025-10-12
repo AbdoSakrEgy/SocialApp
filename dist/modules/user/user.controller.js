@@ -17,9 +17,9 @@ router.patch("/upload-profile-video", auth_middleware_1.auth, (0, multer_upload_
 router.patch("/upload-avatar-image", auth_middleware_1.auth, userServices.uploadAvatarImage);
 router.patch("/upload-cover-images", auth_middleware_1.auth, (0, validation_middleware_1.validation)(user_validation_1.uploadAvatarImageSchema), (0, multer_upload_1.multerUpload)({}).array("coverImages", 3), userServices.uploadCoverImages);
 //! next api after use it from browser is generate => Error [ERR_HTTP_HEADERS_SENT]...
-router.get("/get-file-from-key/*path", userServices.getFileFromKey);
-router.get("/get-file-from-key-preSignedURL/*path", (0, validation_middleware_1.validation)(user_validation_1.getFileFromKeyPreSignedURLSchema), userServices.getFileFromKeyPreSignedURL);
-router.delete("/delete-file-using-key/*path", userServices.deleteFileUsingKey);
-router.delete("/delete-files-using-key", (0, validation_middleware_1.validation)(user_validation_1.deleteFilesUsingKeySchema), userServices.deleteFilesUsingKey);
+router.get("/get-file/*path", userServices.getFile);
+router.get("/create-presignedUrl-toGetFile/*path", (0, validation_middleware_1.validation)(user_validation_1.createPresignedUrlToGetFileSchema), userServices.createPresignedUrlToGetFile);
+router.delete("/delete-file/*path", userServices.deleteFile);
+router.delete("/delete-multi-files", (0, validation_middleware_1.validation)(user_validation_1.deleteMultiFilesSchema), userServices.deleteMultiFiles);
 router.patch("/update-basic-info", auth_middleware_1.auth, (0, validation_middleware_1.validation)(user_validation_1.updateBasicInfoSchema), userServices.updateBasicInfo);
 exports.default = router;
