@@ -1,10 +1,11 @@
-import mongoose, { model, Schema, Types } from "mongoose";
+import mongoose, { HydratedDocument, model, Schema, Types } from "mongoose";
+import { IUser } from "../user/user.model";
 
 export interface IPost {
   content: string;
   attachments: string[]; // Array<string>
   createdBy: Types.ObjectId;
-  avilableFor: string;
+  avilableFor: PostAvilableForEnum;
   isCommentsAllowed: boolean;
   likes: Types.ObjectId[]; // Array<Types.ObjectId>
   tags: Types.ObjectId[]; // Array<Types.ObjectId>
@@ -14,10 +15,30 @@ export interface IPost {
   updatedAt: Date;
 }
 
-export const AvilableForEnum = {
-  PUBLIC: "public",
-  PRIVATE: "private",
-  FRIENDS: "friends",
+export enum PostAvilableForEnum {
+  PUBLIC = "public",
+  PRIVATE = "private",
+  FRIENDS = "friends",
+}
+
+export const avilabiltyConditation = (user: HydratedDocument<IUser>) => {
+  return [
+    {
+      avilableFor: PostAvilableForEnum.PUBLIC,
+    },
+    {
+      avilableFor: PostAvilableForEnum.PRIVATE,
+      createdBy: user._id,
+    },
+    {
+      avilableFor: PostAvilableForEnum.PRIVATE,
+      tags: { $in: user._id },
+    },
+    {
+      avilableFor: PostAvilableForEnum.FRIENDS,
+      createdBy: { $in: [...user.frinds, user._id] },
+    },
+  ];
 };
 
 const postSchema = new Schema<IPost>(
@@ -32,8 +53,8 @@ const postSchema = new Schema<IPost>(
     },
     avilableFor: {
       type: String,
-      enum: Object.values(AvilableForEnum),
-      default: AvilableForEnum.PUBLIC,
+      enum: Object.values(PostAvilableForEnum),
+      default: PostAvilableForEnum.PUBLIC,
     },
     isCommentsAllowed: { type: Boolean, default: true },
     likes: { type: [mongoose.Schema.Types.ObjectId], ref: "user" },

@@ -10,6 +10,9 @@ import {
   createPresignedUrlToGetFileSchema,
   updateBasicInfoSchema,
   uploadAvatarImageSchema,
+  uploadProfileImageSchema,
+  uploadProfileVideoSchema,
+  uploadCoverImagesSchema,
 } from "./user.validation";
 import {
   fileTypes,
@@ -23,6 +26,7 @@ router.patch(
   "/upload-profile-image",
   auth,
   multerUpload({}).single("profileImage"),
+  validation(uploadProfileImageSchema),
   userServices.uploadProfileImage
 );
 router.patch(
@@ -32,14 +36,21 @@ router.patch(
     sendedFileType: fileTypes.video,
     storeIn: StoreIn.disk,
   }).single("profileVideo"),
+  validation(uploadProfileVideoSchema),
   userServices.uploadProfileVideo
 );
-router.patch("/upload-avatar-image", auth, userServices.uploadAvatarImage);
+router.patch(
+  "/upload-avatar-image",
+  auth,
+  validation(uploadAvatarImageSchema),
+  userServices.uploadAvatarImage
+);
 router.patch(
   "/upload-cover-images",
   auth,
-  validation(uploadAvatarImageSchema),
   multerUpload({}).array("coverImages", 3),
+  //! not working
+  // validation(uploadCoverImagesSchema),
   userServices.uploadCoverImages
 );
 //! next api after use it from browser is generate => Error [ERR_HTTP_HEADERS_SENT]...

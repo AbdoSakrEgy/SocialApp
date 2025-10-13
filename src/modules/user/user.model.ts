@@ -33,6 +33,7 @@ export interface IUser {
   profileVideo: string;
   avatarImage: string;
   coverImages: string[];
+  frinds: Types.ObjectId[];
 }
 
 export const Gender = {
@@ -149,6 +150,7 @@ const userSchema = new Schema<IUser>(
     coverImages: {
       type: [{ type: String }],
     },
+    frinds: { type: [{ type: Types.ObjectId, ref: "user" }] },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );

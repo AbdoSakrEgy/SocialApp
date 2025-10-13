@@ -1,5 +1,4 @@
-import { IUser, UserModel } from "./user.model";
-import { DBRepo } from "../../DB/db.repo";
+import { IUser } from "./user.model";
 import { successHandler } from "../../utils/successHandler";
 import { NextFunction, Request, Response } from "express";
 import { UserRepo } from "./user.repo";
@@ -28,7 +27,6 @@ const createS3WriteStreamPipe = promisify(pipeline);
 interface IUserServices {}
 
 export class UserServices implements IUserServices {
-  // private userModel = new DBRepo(UserModel);
   private userModel = new UserRepo();
 
   constructor() {}
@@ -52,7 +50,7 @@ export class UserServices implements IUserServices {
     const user = res.locals.user as HydratedDocument<IUser>;
     // step: upload image
     const Key = await uploadSingleSmallFileS3({
-      dest: `${user.firstName}/profileImage`,
+      dest: `users/${user._id}/profileImage`,
       fileFromMulter: req.file as Express.Multer.File,
     });
     // step: update user
@@ -76,7 +74,7 @@ export class UserServices implements IUserServices {
     const user = res.locals.user as HydratedDocument<IUser>;
     // step: upload video
     const Key = await uploadSingleLargeFileS3({
-      dest: `${user.firstName}/profileVideo`,
+      dest: `users/${user._id}/profileVideo`,
       fileFromMulter: req.file as Express.Multer.File,
       storeIn: StoreIn.disk,
     });
@@ -102,7 +100,7 @@ export class UserServices implements IUserServices {
     const { fileName, fileType }: uploadAvatarImageDTO = req.body;
     // step: upload image
     const { url, Key } = await createPreSignedUrlToUploadFileS3({
-      dest: `${user.firstName}/avatarImage`,
+      dest: `users/${user._id}/avatarImage`,
       fileName,
       ContentType: fileType,
     });
@@ -125,11 +123,12 @@ export class UserServices implements IUserServices {
     res: Response,
     next: NextFunction
   ): Promise<Response> => {
+    console.log(req.body);
     const user = res.locals.user;
     // step: upload images
     const Keys = await uploadMultiFilesS3({
       filesFromMulter: req.files as Express.Multer.File[],
-      dest: `${user.firstName}/coverImages`,
+      dest: `users/${user._id}/coverImages`,
     });
     // step: update user
     const updatedUser = await this.userModel.findOneAndUpdate({

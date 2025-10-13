@@ -10,7 +10,6 @@ const util_1 = require("util");
 const stream_1 = require("stream");
 const createS3WriteStreamPipe = (0, util_1.promisify)(stream_1.pipeline);
 class UserServices {
-    // private userModel = new DBRepo(UserModel);
     userModel = new user_repo_1.UserRepo();
     constructor() { }
     // ============================ userProfile ============================
@@ -23,7 +22,7 @@ class UserServices {
         const user = res.locals.user;
         // step: upload image
         const Key = await (0, S3_services_1.uploadSingleSmallFileS3)({
-            dest: `${user.firstName}/profileImage`,
+            dest: `users/${user._id}/profileImage`,
             fileFromMulter: req.file,
         });
         // step: update user
@@ -42,7 +41,7 @@ class UserServices {
         const user = res.locals.user;
         // step: upload video
         const Key = await (0, S3_services_1.uploadSingleLargeFileS3)({
-            dest: `${user.firstName}/profileVideo`,
+            dest: `users/${user._id}/profileVideo`,
             fileFromMulter: req.file,
             storeIn: multer_upload_1.StoreIn.disk,
         });
@@ -63,7 +62,7 @@ class UserServices {
         const { fileName, fileType } = req.body;
         // step: upload image
         const { url, Key } = await (0, S3_services_1.createPreSignedUrlToUploadFileS3)({
-            dest: `${user.firstName}/avatarImage`,
+            dest: `users/${user._id}/avatarImage`,
             fileName,
             ContentType: fileType,
         });
@@ -80,11 +79,12 @@ class UserServices {
     };
     // ============================ uploadCoverImages ============================
     uploadCoverImages = async (req, res, next) => {
+        console.log(req.body);
         const user = res.locals.user;
         // step: upload images
         const Keys = await (0, S3_services_1.uploadMultiFilesS3)({
             filesFromMulter: req.files,
-            dest: `${user.firstName}/coverImages`,
+            dest: `users/${user._id}/coverImages`,
         });
         // step: update user
         const updatedUser = await this.userModel.findOneAndUpdate({

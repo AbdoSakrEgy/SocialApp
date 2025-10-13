@@ -116,6 +116,7 @@ const userSchema = new mongoose_1.Schema({
     coverImages: {
         type: [{ type: String }],
     },
+    frinds: { type: [{ type: mongoose_1.Types.ObjectId, ref: "user" }] },
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 // virtuals
 userSchema.virtual("fullName").get(function () {

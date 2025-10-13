@@ -2,18 +2,34 @@ import { Router } from "express";
 import PostServices from "./post.service";
 import { auth } from "../../middlewares/auth.middleware";
 import { validation } from "../../middlewares/validation.middleware";
-import { multerLocal } from "../../utils/multer/multer.local";
-import { createPostSchema } from "./post.validation";
+import {
+  createPostSchema,
+  likePostSchema,
+  updatePostSchema,
+} from "./post.validation";
+import { multerUpload } from "../../utils/multer/multer.upload";
 const router = Router();
 const postServices = new PostServices();
 
 router.post(
   "/create-post",
   auth,
-  multerLocal({ dest: "Posts attachments" }).array("attachments"),
+  multerUpload({}).array("attachments", 4),
   validation(createPostSchema),
   postServices.createPost
 );
-router.get("/posts/:id", auth, postServices.allPosts);
+router.post(
+  "/like-post/:postId",
+  auth,
+  validation(likePostSchema),
+  postServices.likePost
+);
+router.patch(
+  "/update-post/:postId",
+  auth,
+  multerUpload({}).array("newAttachments"),
+  validation(updatePostSchema),
+  postServices.updatePost
+);
 
 export default router;

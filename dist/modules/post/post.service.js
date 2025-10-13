@@ -1,15 +1,208 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const successHandler_1 = require("../../utils/successHandler");
+const post_repo_1 = require("./post.repo");
+const user_repo_1 = require("../user/user.repo");
+const Errors_1 = require("../../utils/Errors");
+const S3_services_1 = require("../../utils/multer/S3.services");
+const nanoid_1 = require("nanoid");
+const mongoose_1 = require("mongoose");
+const post_model_1 = require("./post.model");
 class PostServices {
+    postModel = new post_repo_1.PostRepo();
+    userModel = new user_repo_1.UserRepo();
     constructor() { }
     // ============================ createPost ============================
     createPost = async (req, res, next) => {
+        const user = res.locals.user;
+        const files = req.files;
+        const { content, avilableFor, isCommentsAllowed, tags } = req.body;
+        const assetsFolderId = (0, nanoid_1.nanoid)(15);
+        const dest = `users/${user._id}/posts/${assetsFolderId}`;
+        let attachments = [];
+        // step: check tags
+        if (tags?.length == 0) {
+            const users = await this.userModel.find({
+                filter: { _id: { $in: tags } },
+            });
+            if (users?.length != tags.length) {
+                throw new Errors_1.ApplicationExpection("There is some users not found in tags", 400);
+            }
+        }
+        // step: store attachments
+        if (files?.length) {
+            attachments = await (0, S3_services_1.uploadMultiFilesS3)({
+                dest,
+                filesFromMulter: files,
+            });
+        }
+        // step: create post
+        const post = await this.postModel.create({
+            data: {
+                ...req.body,
+                //! next code not working
+                // content,
+                // avilableFor,
+                // isCommentsAllowed,
+                // tags,
+                attachments,
+                createdBy: user._id,
+                assetsFolderId,
+            },
+        });
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "Post created successfully",
+            result: { post },
+        });
+    };
+    // ============================ likePost ============================
+    likePost = async (req, res, next) => {
+        const user = res.locals.user;
+        const { postId } = req.params;
+        // step: find post
+        const post = await this.postModel.findOne({
+            filter: {
+                _id: postId,
+                $or: (0, post_model_1.avilabiltyConditation)(user),
+            },
+        });
+        if (!post) {
+            throw new Errors_1.ApplicationExpection("Post not found or you don't have access to like this post", 404);
+        }
+        // step: add or remove like
+        let updatedPost;
+        if (post.likes.includes(user._id)) {
+            updatedPost = await this.postModel.findOneAndUpdate({
+                filter: { _id: post._id },
+                data: { $pull: { likes: user._id } },
+            });
+        }
+        else {
+            updatedPost = await this.postModel.findOneAndUpdate({
+                filter: { _id: post._id },
+                data: { $push: { likes: user._id } },
+            });
+        }
         return (0, successHandler_1.successHandler)({ res });
     };
-    // ============================ allPosts ============================
-    allPosts = async (req, res, next) => {
-        return (0, successHandler_1.successHandler)({ res });
+    // ============================ updatePost ============================
+    updatePost = async (req, res, next) => {
+        const user = res.locals.user;
+        const postId = req.params.postId;
+        const { content, removedAttachments = [], avilableFor, isCommentsAllowed, newTags = [], removedTags = [], } = req.body;
+        const newAttachments = req.files;
+        let newAttachmentsKeys = [];
+        let updatedPost;
+        // step: check post existance
+        updatedPost = await this.postModel.findOne({
+            filter: { _id: postId, createdBy: user._id },
+        });
+        if (!updatedPost) {
+            throw new Errors_1.ApplicationExpection("Post not found", 404);
+        }
+        //* Way1
+        // step: upload and delete attachments from S3
+        if (newAttachments.length > 0) {
+            newAttachmentsKeys = await (0, S3_services_1.uploadMultiFilesS3)({
+                dest: `users/${user._id}/posts/${updatedPost?.assetsFolderId}`,
+                filesFromMulter: newAttachments,
+            });
+        }
+        if (removedAttachments.length > 0) {
+            await (0, S3_services_1.deleteMultiFilesS3)({ Keys: removedAttachments });
+        }
+        // step: upadte post
+        await updatedPost.updateOne([
+            {
+                $set: {
+                    content: content || updatedPost.content,
+                    attachments: {
+                        $setUnion: [
+                            { $setDifference: ["$attachments", removedAttachments] },
+                            newAttachmentsKeys,
+                        ],
+                    },
+                    avilableFor: avilableFor || updatedPost.avilableFor,
+                    isCommentsAllowed: isCommentsAllowed || updatedPost.isCommentsAllowed,
+                    tags: {
+                        $setUnion: [
+                            {
+                                $setDifference: [
+                                    "$tags",
+                                    removedTags.map((id) => mongoose_1.Types.ObjectId.createFromHexString(id)), // removedTags is an array of strings, but $tags is an array of ObjectIds, so we convert removedTags to ObjectId
+                                ],
+                            },
+                            newTags.map((newtag) => {
+                                return mongoose_1.Types.ObjectId.createFromHexString(newtag);
+                            }), // aggregation return it string, so we make it ObjectId
+                        ],
+                    },
+                },
+            },
+        ]);
+        //* Way2
+        // //step: update attachments
+        // if (removedAttachments.length > 0) {
+        //   await deleteMultiFilesS3({ Keys: removedAttachments });
+        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //     filter: { _id: postId },
+        //     data: { $pull: { attachments: { $in: removedAttachments } } }, // $pull => $in | $addToSet,$push => $each
+        //   });
+        // }
+        // if (newAttachments.length > 0) {
+        //   newAttachmentsKeys = await uploadMultiFilesS3({
+        //     dest: `users/${user._id}/posts/${updatedPost?.assetsFolderId}`,
+        //     filesFromMulter: newAttachments,
+        //   });
+        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //     filter: { _id: postId },
+        //     data: { $addToSet: { attachments: { $each: newAttachmentsKeys } } },
+        //   });
+        // }
+        // // step: update content
+        // if (content) {
+        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //     filter: { _id: postId },
+        //     data: { $set: { content } },
+        //   });
+        // }
+        // // step:update avilableFor
+        // if (avilableFor) {
+        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //     filter: { _id: postId },
+        //     data: { $set: { avilableFor } },
+        //   });
+        // }
+        // // step:update isCommentsAllowed
+        // if (isCommentsAllowed) {
+        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //     filter: { _id: postId },
+        //     data: { $set: { isCommentsAllowed } },
+        //   });
+        // }
+        // // step: update tags
+        // if (newTags && newTags.length > 0) {
+        //   const isUsersToTagsExist = await this.userModel.find({
+        //     filter: {
+        //       _id: { $in: newTags },
+        //     },
+        //   });
+        //   if (newTags?.length != isUsersToTagsExist?.length) {
+        //     throw new ApplicationExpection("Some tags users not found", 404);
+        //   }
+        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //     filter: { _id: postId },
+        //     data: { $addToSet: { tags: { $each: newTags } } },
+        //   });
+        // }
+        // if (removedTags && removedTags.length > 0) {
+        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //     filter: { _id: postId },
+        //     data: { $pull: { tags: { $in: removedTags } } },
+        //   });
+        // }
+        return (0, successHandler_1.successHandler)({ res, message: "Post updated successfully" });
     };
 }
 exports.default = PostServices;
