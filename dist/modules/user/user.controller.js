@@ -25,4 +25,6 @@ router.get("/create-presignedUrl-toGetFile/*path", (0, validation_middleware_1.v
 router.delete("/delete-file/*path", userServices.deleteFile);
 router.delete("/delete-multi-files", (0, validation_middleware_1.validation)(user_validation_1.deleteMultiFilesSchema), userServices.deleteMultiFiles);
 router.patch("/update-basic-info", auth_middleware_1.auth, (0, validation_middleware_1.validation)(user_validation_1.updateBasicInfoSchema), userServices.updateBasicInfo);
+router.post("/send-friend-request/:to", auth_middleware_1.auth, (0, validation_middleware_1.validation)(user_validation_1.sendFriendRequestSchema), userServices.sendFriendRequest);
+router.post("/accept-friend-request/:friendRequestId", auth_middleware_1.auth, (0, validation_middleware_1.validation)(user_validation_1.acceptFriendRequestSchema), userServices.accepetFriendRequest);
 exports.default = router;

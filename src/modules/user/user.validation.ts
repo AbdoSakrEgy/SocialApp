@@ -1,5 +1,6 @@
 import z from "zod";
 import { Gender } from "./user.model";
+import mongoose from "mongoose";
 
 export const uploadProfileImageSchema = z.object({
   profileImage: z.object(),
@@ -34,4 +35,22 @@ export const updateBasicInfoSchema = z.object({
   age: z.number().min(18).max(200).optional(),
   gender: z.literal([Gender.male, Gender.female]).optional(),
   phone: z.string().optional(),
+});
+
+export const sendFriendRequestSchema = z.object({
+  to: z
+    .string()
+    .refine((val) => mongoose.Types.ObjectId.isValid(val), {
+      message: "Invalid ObjectId",
+    })
+    .transform((val) => new mongoose.Types.ObjectId(val)),
+});
+
+export const acceptFriendRequestSchema = z.object({
+  friendRequestId: z
+    .string()
+    .refine((val) => mongoose.Types.ObjectId.isValid(val), {
+      message: "Invalid ObjectId",
+    })
+    .transform((val) => new mongoose.Types.ObjectId(val)),
 });

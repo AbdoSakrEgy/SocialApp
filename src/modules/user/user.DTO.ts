@@ -4,6 +4,8 @@ import {
   createPresignedUrlToGetFileSchema,
   updateBasicInfoSchema,
   uploadAvatarImageSchema,
+  sendFriendRequestSchema,
+  acceptFriendRequestSchema,
 } from "./user.validation";
 
 export type updateBasicInfoDTO = z.infer<typeof updateBasicInfoSchema>;
@@ -12,3 +14,5 @@ export type createPresignedUrlToGetFileDTO = z.infer<
   typeof createPresignedUrlToGetFileSchema
 >;
 export type deleteMultiFilesDTO = z.infer<typeof deleteMultiFilesSchema>;
+export type sendFriendRequestDTO = z.infer<typeof sendFriendRequestSchema>;
+export type acceptFriendRequestDTO = z.infer<typeof acceptFriendRequestSchema>;

@@ -13,6 +13,8 @@ import {
   uploadProfileImageSchema,
   uploadProfileVideoSchema,
   uploadCoverImagesSchema,
+  sendFriendRequestSchema,
+  acceptFriendRequestSchema,
 } from "./user.validation";
 import {
   fileTypes,
@@ -71,6 +73,18 @@ router.patch(
   auth,
   validation(updateBasicInfoSchema),
   userServices.updateBasicInfo
+);
+router.post(
+  "/send-friend-request/:to",
+  auth,
+  validation(sendFriendRequestSchema),
+  userServices.sendFriendRequest
+);
+router.post(
+  "/accept-friend-request/:friendRequestId",
+  auth,
+  validation(acceptFriendRequestSchema),
+  userServices.accepetFriendRequest
 );
 
 export default router;

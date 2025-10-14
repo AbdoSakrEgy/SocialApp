@@ -8,9 +8,11 @@ const multer_upload_1 = require("../../utils/multer/multer.upload");
 const Errors_1 = require("../../utils/Errors");
 const util_1 = require("util");
 const stream_1 = require("stream");
+const friendRequest_repo_1 = require("../../DB/repos/friendRequest.repo");
 const createS3WriteStreamPipe = (0, util_1.promisify)(stream_1.pipeline);
 class UserServices {
     userModel = new user_repo_1.UserRepo();
+    friendRequestModel = new friendRequest_repo_1.FriendRequestRepo();
     constructor() { }
     // ============================ userProfile ============================
     userProfile = async (req, res, next) => {
@@ -164,6 +166,78 @@ class UserServices {
             });
         }
         return (0, successHandler_1.successHandler)({ res, message: "User updated successfully" });
+    };
+    // ============================ sendFriendRequest ============================
+    sendFriendRequest = async (req, res, next) => {
+        const user = res.locals.user;
+        const { to } = req.params;
+        // step: check user not send for himself
+        if (user._id == to) {
+            throw new Errors_1.ApplicationExpection("You can't send friend request for your self", 400);
+        }
+        // step: check to existance
+        const friend = await this.userModel.findOne({ filter: { _id: to } });
+        if (!friend) {
+            throw new Errors_1.ApplicationExpection("User not found", 404);
+        }
+        // step: check if friend req existance
+        const isFriendRequestExistance = await this.friendRequestModel.findOne({
+            filter: {
+                $or: [
+                    { from: user._id, to },
+                    { from: to, to: user._id },
+                ],
+            },
+        });
+        if (isFriendRequestExistance) {
+            throw new Errors_1.ApplicationExpection("There is already a friend request.", 400);
+        }
+        // step: create friend request
+        const friendReq = await this.friendRequestModel.create({
+            data: {
+                from: user._id,
+                to,
+            },
+        });
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "Friend request sended successfully",
+            result: { friendReq },
+        });
+    };
+    // ============================ accepetFriendRequest ============================
+    accepetFriendRequest = async (req, res, next) => {
+        const user = res.locals.user;
+        const friendRequestId = req.params
+            .friendRequestId;
+        // step: check friend request existance
+        const friendRequest = await this.friendRequestModel.findOne({
+            filter: {
+                _id: friendRequestId,
+                to: user._id,
+                acceptedAt: { $exists: false },
+            },
+        });
+        if (!friendRequest) {
+            throw new Errors_1.ApplicationExpection("Friend request not found", 404);
+        }
+        // step: accept friend request
+        await friendRequest.updateOne({
+            $set: { acceptedAt: new Date(Date.now()) },
+        });
+        // step: add (user) to (friend friends list) and add (friend) to (user friends list)
+        await this.friendRequestModel.findOneAndUpdate({
+            filter: { _id: user._id },
+            data: { $push: { friends: friendRequest.from } },
+        });
+        await this.friendRequestModel.findOneAndUpdate({
+            filter: { _id: friendRequest.from },
+            data: { $push: { friends: user._id } },
+        });
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "Friend request accepted successfully",
+        });
     };
 }
 exports.UserServices = UserServices;

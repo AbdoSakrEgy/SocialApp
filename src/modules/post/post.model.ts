@@ -36,7 +36,7 @@ export const avilabiltyConditation = (user: HydratedDocument<IUser>) => {
     },
     {
       avilableFor: PostAvilableForEnum.FRIENDS,
-      createdBy: { $in: [...user.frinds, user._id] },
+      createdBy: { $in: [...user.friends, user._id] },
     },
   ];
 };
