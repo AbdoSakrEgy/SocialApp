@@ -31,16 +31,8 @@ const userSchema = new mongoose_1.Schema({
         maxlength: [20, "Last name cannot exceed 20 characters"],
         required: true,
     },
-    age: {
-        type: Number,
-        min: 18,
-        max: 200,
-    },
-    gender: {
-        type: String,
-        default: exports.Gender.male,
-        enum: Object.values(exports.Gender),
-    },
+    age: { type: Number, min: 18, max: 200 },
+    gender: { type: String, default: exports.Gender.male, enum: Object.values(exports.Gender) },
     phone: {
         type: String,
         trim: true,
@@ -51,17 +43,9 @@ const userSchema = new mongoose_1.Schema({
         set: (value) => (value ? (0, crypto_1.encrypt)(value) : value),
         get: (value) => (value ? (0, crypto_1.decrypt)(value) : value),
     },
-    role: {
-        type: String,
-        enum: Object.values(exports.Role),
-        default: exports.Role.customer,
-    },
+    role: { type: String, enum: Object.values(exports.Role), default: exports.Role.customer },
     // auth and OTP
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-    },
+    email: { type: String, required: true, unique: true },
     emailOtp: {
         otp: {
             type: String,
@@ -70,53 +54,22 @@ const userSchema = new mongoose_1.Schema({
         },
         expiresIn: Date,
     },
-    newEmail: {
-        type: String,
-    },
-    newEmailOtp: {
-        otp: {
-            type: String,
-        },
-        expiresIn: Date,
-    },
-    emailConfirmed: {
-        type: Boolean,
-        default: false,
-    },
-    password: {
-        type: String,
-        min: 3,
-        max: 20,
-        required: true,
-    },
-    passwordOtp: {
-        otp: {
-            type: String,
-        },
-        expiresIn: Date,
-    },
+    newEmail: { type: String },
+    newEmailOtp: { otp: { type: String }, expiresIn: Date },
+    emailConfirmed: { type: Boolean, default: false },
+    password: { type: String, min: 3, max: 20, required: true },
+    passwordOtp: { otp: { type: String }, expiresIn: Date },
     credentialsChangedAt: Date,
-    isActive: {
-        type: Boolean,
-        default: true,
-    },
-    deletedBy: {
-        type: mongoose_1.Types.ObjectId,
-    },
+    isActive: { type: Boolean, default: true },
+    deletedBy: { type: mongoose_1.Types.ObjectId },
     // others
-    profileImage: {
-        type: String,
-    },
-    profileVideo: {
-        type: String,
-    },
-    avatarImage: {
-        type: String,
-    },
-    coverImages: {
-        type: [{ type: String }],
-    },
+    profileImage: { type: String },
+    profileVideo: { type: String },
+    avatarImage: { type: String },
+    coverImages: { type: [{ type: String }] },
     friends: { type: [{ type: mongoose_1.Types.ObjectId, ref: "user" }] },
+    is2FAActive: { type: Boolean, default: false },
+    otp2FA: { otp: { type: String }, expiresIn: Date },
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 // virtuals
 userSchema.virtual("fullName").get(function () {
@@ -147,6 +100,12 @@ userSchema.pre("save", async function (next) {
             expiresIn: this.passwordOtp?.expiresIn,
         };
     }
+    if (this.otp2FA && this.isModified("otp2FA")) {
+        this.otp2FA = {
+            otp: await (0, bcrypt_1.hash)(this.otp2FA?.otp),
+            expiresIn: this.otp2FA?.expiresIn,
+        };
+    }
 });
 // pre findOneAndUpdate
 userSchema.pre("findOneAndUpdate", async function (next) {
@@ -167,6 +126,9 @@ userSchema.pre("findOneAndUpdate", async function (next) {
         }
         if ($set["passwordOtp.otp"]) {
             $set["passwordOtp.otp"] = await (0, bcrypt_1.hash)($set["passwordOtp.otp"]);
+        }
+        if ($set?.otp2FA?.otp) {
+            $set.otp2FA.otp = await (0, bcrypt_1.hash)($set.otp2FA.otp);
         }
         if (!update.$set && $set !== update) {
             update.$set = $set;

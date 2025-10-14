@@ -2,7 +2,9 @@ import { NextFunction, Request, Response } from "express";
 import { DBRepo } from "../../DB/db.repo";
 import { IUser, UserModel } from "../user/user.model";
 import {
+  activeDeactive2FADTO,
   changePasswordDTO,
+  check2FAOTPADTO,
   confirmEmaiDTO,
   forgetPasswordDTO,
   loginDTO,
@@ -84,7 +86,7 @@ export class AuthServices implements IAuthServcies {
     if (isUserExist) {
       throw new NotValidEmail("User already exist");
     }
-    // step: send otp to email
+    // step: send email otp
     const otpCode = createOtp();
 
     const { isEmailSended, info } = await sendEmail({
@@ -154,6 +156,39 @@ export class AuthServices implements IAuthServcies {
     const user = isUserExist;
     if (!(await compare(password, user.password))) {
       throw new ApplicationExpection("Invalid credentials", 401);
+    }
+    // step: check is 2FA active
+    if (user.is2FAActive) {
+      // ->step: send email otp
+      const otpCode = createOtp();
+      const { isEmailSended, info } = await sendEmail({
+        to: user.email,
+        subject: "SocialApp",
+        html: template({
+          otpCode,
+          receiverName: user.firstName,
+          subject: "2FA login",
+        }),
+      });
+      if (!isEmailSended) {
+        throw new ApplicationExpection("Error while sending email", 400);
+      }
+      // ->step: update user
+      const updatedUser = await this.userModel.findOneAndUpdate({
+        filter: { _id: user._id },
+        data: {
+          $set: {
+            otp2FA: {
+              otp: otpCode,
+              expiresIn: new Date(Date.now() + 5 * 60 * 1000),
+            },
+          },
+        },
+      });
+      return successHandler({
+        res,
+        message: "OTP sended to your email pleaze confirm it to login",
+      });
     }
     // step: create token
     const accessToken = createJwt(
@@ -368,7 +403,7 @@ export class AuthServices implements IAuthServcies {
     if (user.emailOtp?.expiresIn > new Date(Date.now())) {
       throw new ApplicationExpection("Your OTP not expired yet", 400);
     }
-    // step: send otp to email
+    // step: send email otp
     const otpCode = createOtp();
     // const otpCode = "555";
     const { isEmailSended, info } = await sendEmail({
@@ -450,7 +485,7 @@ export class AuthServices implements IAuthServcies {
     if (user.passwordOtp?.expiresIn > new Date(Date.now())) {
       throw new ApplicationExpection("Your OTP not expired yet", 400);
     }
-    // step: send otp to email
+    // step: send email otp
     const otpCode = createOtp();
     // const otpCode = "555";
     const { isEmailSended, info } = await sendEmail({
@@ -510,6 +545,119 @@ export class AuthServices implements IAuthServcies {
     return successHandler({
       res,
       message: "Password changed successfully, You have to login",
+    });
+  };
+
+  // ============================ enable2FA ============================
+  enable2FA = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    // step: send email otp
+    const otpCode = createOtp();
+    const { isEmailSended, info } = await sendEmail({
+      to: user.email,
+      subject: "SocialApp",
+      html: template({
+        otpCode,
+        receiverName: user.firstName,
+        subject: "Enable 2FA",
+      }),
+    });
+    if (!isEmailSended) {
+      throw new ApplicationExpection("Error while sending email", 400);
+    }
+    // step: save OTP
+    const updatedUser = await this.userModel.findOneAndUpdate({
+      filter: { _id: user._id },
+      data: {
+        $set: {
+          otp2FA: {
+            otp: otpCode,
+            expiresIn: new Date(Date.now() + 5 * 60 * 1000),
+          },
+        },
+      },
+    });
+    return successHandler({
+      res,
+      message: "OTP sended to your email plz confirm it to active 2FA",
+    });
+  };
+
+  // ============================ activeDeactive2FA ============================
+  activeDeactive2FA = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    const otp = (req.body as activeDeactive2FADTO)?.otp;
+    // step: check otp existance
+    if (!otp) {
+      const updatedUser = await this.userModel.findOneAndUpdate({
+        filter: { _id: user._id },
+        data: { $set: { is2FAActive: false } },
+      });
+      return successHandler({ res, message: "2FA disabled successfully" });
+    }
+    // step: check otp value
+    if (!user?.otp2FA?.otp) {
+      throw new ApplicationExpection("OTP not correct", 400);
+    }
+    if (!(await compare(otp, user?.otp2FA?.otp))) {
+      throw new ApplicationExpection("OTP not correct", 400);
+    }
+    if (user?.otp2FA?.expiresIn < new Date(Date.now())) {
+      throw new ApplicationExpection("OTP expired", 400);
+    }
+    // step: update 2fa
+    console.log("object");
+    const updatedUser = await this.userModel.findOneAndUpdate({
+      filter: { _id: user._id },
+      data: { $set: { is2FAActive: true } },
+    });
+    return successHandler({ res, message: "2FA enabled successfully" });
+  };
+
+  // ============================ check2FAOTP ============================
+  check2FAOTP = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const { userId, otp } = req.body as check2FAOTPADTO;
+    const user = await this.userModel.findOne({ filter: { _id: userId } });
+    // step: check OTP
+    if (!user?.otp2FA?.otp) {
+      throw new ApplicationExpection("Invalid credentials", 400);
+    }
+    if (!(await compare(otp, user?.otp2FA?.otp))) {
+      throw new ApplicationExpection("Invalid credentials", 400);
+    }
+    // step: create token
+    const accessToken = createJwt(
+      { userId: user._id, userEmail: user.email },
+      process.env.ACCESS_SEGNATURE as string,
+      {
+        expiresIn: "1h",
+        jwtid: createOtp(),
+      }
+    );
+    const refreshToken = createJwt(
+      { userId: user._id, userEmail: user.email },
+      process.env.REFRESH_SEGNATURE as string,
+      {
+        expiresIn: "7d",
+        jwtid: createOtp(),
+      }
+    );
+    return successHandler({
+      res,
+      message: "Loggedin successfully",
+      result: { accessToken, refreshToken },
     });
   };
 

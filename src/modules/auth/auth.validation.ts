@@ -69,3 +69,12 @@ export const changePasswordSchema = z.object({
   otp: z.string(),
   newPassword: z.string(),
 });
+
+export const activeDeactive2FASchema = z.object({
+  otp: z.string().optional(),
+});
+
+export const check2FAOTPSchema = z.object({
+  userId: z.string(),
+  otp: z.string(),
+});

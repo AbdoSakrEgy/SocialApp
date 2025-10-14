@@ -8,6 +8,9 @@ const S3_services_1 = require("../../utils/multer/S3.services");
 const nanoid_1 = require("nanoid");
 const mongoose_1 = require("mongoose");
 const post_model_1 = require("./post.model");
+const send_email_1 = require("../../utils/sendEmail/send.email");
+const createOtp_1 = require("../../utils/createOtp");
+const generateHTML_1 = require("../../utils/sendEmail/generateHTML");
 class PostServices {
     postModel = new post_repo_1.PostRepo();
     userModel = new user_repo_1.UserRepo();
@@ -20,7 +23,7 @@ class PostServices {
         const assetsFolderId = (0, nanoid_1.nanoid)(15);
         const dest = `users/${user._id}/posts/${assetsFolderId}`;
         let attachments = [];
-        // step: check tags
+        // step: check tags existance
         if (tags?.length == 0) {
             const users = await this.userModel.find({
                 filter: { _id: { $in: tags } },
@@ -49,6 +52,26 @@ class PostServices {
                 createdBy: user._id,
                 assetsFolderId,
             },
+        });
+        // step: send email for taged users
+        tags?.map(async (tag) => {
+            const taggedUser = await this.userModel.findOne({ filter: { _id: tag } });
+            if (!taggedUser?.email || !taggedUser?.firstName) {
+                throw new Errors_1.ApplicationExpection("Tagged user not found", 404);
+            }
+            const otpCode = (0, createOtp_1.createOtp)();
+            const { isEmailSended, info } = await (0, send_email_1.sendEmail)({
+                to: taggedUser.email,
+                subject: "SocialApp",
+                html: (0, generateHTML_1.template)({
+                    otpCode,
+                    receiverName: taggedUser.firstName,
+                    subject: `${user.firstName} tagged you in his post`,
+                }),
+            });
+            if (!isEmailSended) {
+                throw new Errors_1.ApplicationExpection("Error while sending email", 400);
+            }
         });
         return (0, successHandler_1.successHandler)({
             res,

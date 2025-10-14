@@ -19,6 +19,9 @@ import {
   PostModel,
 } from "./post.model";
 import { IUser } from "../user/user.model";
+import { sendEmail } from "../../utils/sendEmail/send.email";
+import { createOtp } from "../../utils/createOtp";
+import { template } from "../../utils/sendEmail/generateHTML";
 
 interface IPostServices {
   likePost(req: Request, res: Response, next: NextFunction): Promise<Response>;
@@ -53,7 +56,7 @@ class PostServices implements IPostServices {
     const dest = `users/${user._id}/posts/${assetsFolderId}`;
     let attachments: string[] = [];
 
-    // step: check tags
+    // step: check tags existance
     if (tags?.length == 0) {
       const users = await this.userModel.find({
         filter: { _id: { $in: tags } },
@@ -86,7 +89,26 @@ class PostServices implements IPostServices {
         assetsFolderId,
       },
     });
-
+    // step: send email for taged users
+    tags?.map(async (tag) => {
+      const taggedUser = await this.userModel.findOne({ filter: { _id: tag } });
+      if (!taggedUser?.email || !taggedUser?.firstName) {
+        throw new ApplicationExpection("Tagged user not found", 404);
+      }
+      const otpCode = createOtp();
+      const { isEmailSended, info } = await sendEmail({
+        to: taggedUser.email,
+        subject: "SocialApp",
+        html: template({
+          otpCode,
+          receiverName: taggedUser.firstName,
+          subject: `${user.firstName} tagged you in his post`,
+        }),
+      });
+      if (!isEmailSended) {
+        throw new ApplicationExpection("Error while sending email", 400);
+      }
+    });
     return successHandler({
       res,
       message: "Post created successfully",

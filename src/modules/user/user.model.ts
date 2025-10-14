@@ -11,21 +11,12 @@ export interface IUser {
   phone: string;
   role: string;
   email: string;
-  emailOtp: {
-    otp: string;
-    expiresIn: Date;
-  };
+  emailOtp: { otp: string; expiresIn: Date };
   newEmail: string;
-  newEmailOtp: {
-    otp: string;
-    expiresIn: Date;
-  };
+  newEmailOtp: { otp: string; expiresIn: Date };
   emailConfirmed: boolean;
   password: string;
-  passwordOtp: {
-    otp: string;
-    expiresIn: Date;
-  };
+  passwordOtp: { otp: string; expiresIn: Date };
   credentialsChangedAt: Date;
   isActive: boolean;
   deletedBy: object;
@@ -34,6 +25,8 @@ export interface IUser {
   avatarImage: string;
   coverImages: string[];
   friends: Types.ObjectId[];
+  is2FAActive: boolean;
+  otp2FA: { otp: string; expiresIn: Date };
 }
 
 export const Gender = {
@@ -65,16 +58,8 @@ const userSchema = new Schema<IUser>(
       maxlength: [20, "Last name cannot exceed 20 characters"],
       required: true,
     },
-    age: {
-      type: Number,
-      min: 18,
-      max: 200,
-    },
-    gender: {
-      type: String,
-      default: Gender.male,
-      enum: Object.values(Gender),
-    },
+    age: { type: Number, min: 18, max: 200 },
+    gender: { type: String, default: Gender.male, enum: Object.values(Gender) },
     phone: {
       type: String,
       trim: true,
@@ -85,17 +70,9 @@ const userSchema = new Schema<IUser>(
       set: (value: string) => (value ? encrypt(value) : value),
       get: (value: string) => (value ? decrypt(value) : value),
     },
-    role: {
-      type: String,
-      enum: Object.values(Role),
-      default: Role.customer,
-    },
+    role: { type: String, enum: Object.values(Role), default: Role.customer },
     // auth and OTP
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
+    email: { type: String, required: true, unique: true },
     emailOtp: {
       otp: {
         type: String,
@@ -104,53 +81,22 @@ const userSchema = new Schema<IUser>(
       },
       expiresIn: Date,
     },
-    newEmail: {
-      type: String,
-    },
-    newEmailOtp: {
-      otp: {
-        type: String,
-      },
-      expiresIn: Date,
-    },
-    emailConfirmed: {
-      type: Boolean,
-      default: false,
-    },
-    password: {
-      type: String,
-      min: 3,
-      max: 20,
-      required: true,
-    },
-    passwordOtp: {
-      otp: {
-        type: String,
-      },
-      expiresIn: Date,
-    },
+    newEmail: { type: String },
+    newEmailOtp: { otp: { type: String }, expiresIn: Date },
+    emailConfirmed: { type: Boolean, default: false },
+    password: { type: String, min: 3, max: 20, required: true },
+    passwordOtp: { otp: { type: String }, expiresIn: Date },
     credentialsChangedAt: Date,
-    isActive: {
-      type: Boolean,
-      default: true,
-    },
-    deletedBy: {
-      type: Types.ObjectId,
-    },
+    isActive: { type: Boolean, default: true },
+    deletedBy: { type: Types.ObjectId },
     // others
-    profileImage: {
-      type: String,
-    },
-    profileVideo: {
-      type: String,
-    },
-    avatarImage: {
-      type: String,
-    },
-    coverImages: {
-      type: [{ type: String }],
-    },
+    profileImage: { type: String },
+    profileVideo: { type: String },
+    avatarImage: { type: String },
+    coverImages: { type: [{ type: String }] },
     friends: { type: [{ type: Types.ObjectId, ref: "user" }] },
+    is2FAActive: { type: Boolean, default: false },
+    otp2FA: { otp: { type: String }, expiresIn: Date },
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );
@@ -189,6 +135,12 @@ userSchema.pre(
         expiresIn: this.passwordOtp?.expiresIn,
       };
     }
+    if (this.otp2FA && this.isModified("otp2FA")) {
+      this.otp2FA = {
+        otp: await hash(this.otp2FA?.otp),
+        expiresIn: this.otp2FA?.expiresIn,
+      };
+    }
   }
 );
 
@@ -212,6 +164,9 @@ userSchema.pre("findOneAndUpdate", async function (next) {
     }
     if ($set["passwordOtp.otp"]) {
       $set["passwordOtp.otp"] = await hash($set["passwordOtp.otp"]);
+    }
+    if ($set?.otp2FA?.otp) {
+      $set.otp2FA.otp = await hash($set.otp2FA.otp);
     }
     if (!update.$set && $set !== update) {
       update.$set = $set;

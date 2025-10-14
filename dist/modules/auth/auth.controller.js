@@ -16,5 +16,8 @@ router.post("/resend-email-otp", (0, validation_middleware_1.validation)(auth_va
 router.patch("/update-password", auth_middleware_1.auth, (0, validation_middleware_1.validation)(auth_validation_1.updatePasswordSchema), authServices.updatePassword);
 router.post("/forget-password", (0, validation_middleware_1.validation)(auth_validation_1.forgetPasswordSchema), authServices.forgetPassword);
 router.patch("/change-password", (0, validation_middleware_1.validation)(auth_validation_1.changePasswordSchema), authServices.changePassword);
+router.patch("/enable-2fa", auth_middleware_1.auth, authServices.enable2FA);
+router.patch("/active-deactive-2fa", auth_middleware_1.auth, (0, validation_middleware_1.validation)(auth_validation_1.activeDeactive2FASchema), authServices.activeDeactive2FA);
+router.patch("/check-2fa-otp", (0, validation_middleware_1.validation)(auth_validation_1.check2FAOTPSchema), authServices.check2FAOTP);
 router.post("/logout", auth_middleware_1.auth, authServices.logout);
 exports.default = router;

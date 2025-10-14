@@ -27,7 +27,64 @@ import { promisify } from "util";
 import { pipeline } from "stream";
 import { FriendRequestRepo } from "../../DB/repos/friendRequest.repo";
 const createS3WriteStreamPipe = promisify(pipeline);
-interface IUserServices {}
+interface IUserServices {
+  userProfile(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  uploadProfileImage(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  uploadProfileVideo(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  uploadAvatarImage(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  uploadCoverImages(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  getFile(req: Request, res: Response, next: NextFunction): Promise<void>;
+  createPresignedUrlToGetFile(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  deleteFile(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  deleteMultiFiles(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  updateBasicInfo(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  sendFriendRequest(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+  accepetFriendRequest(
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response>;
+}
 
 export class UserServices implements IUserServices {
   private userModel = new UserRepo();
@@ -147,7 +204,11 @@ export class UserServices implements IUserServices {
   };
 
   // ============================ getFile ============================
-  getFile = async (req: Request, res: Response, next: NextFunction) => {
+  getFile = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     const { downloadName } = req.query;
     const path = req.params.path as unknown as string[];
     const Key = path.join("/");
