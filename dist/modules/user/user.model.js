@@ -68,6 +68,7 @@ const userSchema = new mongoose_1.Schema({
     avatarImage: { type: String },
     coverImages: { type: [{ type: String }] },
     friends: { type: [{ type: mongoose_1.Types.ObjectId, ref: "user" }] },
+    blockList: { type: [{ type: mongoose_1.Types.ObjectId, ref: "user" }] },
     is2FAActive: { type: Boolean, default: false },
     otp2FA: { otp: { type: String }, expiresIn: Date },
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });

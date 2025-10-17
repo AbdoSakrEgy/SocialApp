@@ -54,3 +54,7 @@ export const acceptFriendRequestSchema = z.object({
     })
     .transform((val) => new mongoose.Types.ObjectId(val)),
 });
+
+export const blockUserSchema = z.object({
+  blockedUser: z.string(),
+});

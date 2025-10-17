@@ -7,6 +7,8 @@ import {
   createPostSchema,
   deleteCommentSchema,
   deletePostSchema,
+  getCommentSchema,
+  getPostSchema,
   likePostSchema,
   updateCommentSchema,
   updatePostSchema,
@@ -35,6 +37,12 @@ router.patch(
   validation(updatePostSchema),
   postServices.updatePost
 );
+router.get(
+  "/get-post/:postId",
+  auth,
+  validation(getPostSchema),
+  postServices.getPost
+);
 router.delete(
   "/soft-delete-post/:postId",
   auth,
@@ -58,6 +66,12 @@ router.patch(
   auth,
   validation(updateCommentSchema),
   postServices.updateComment
+);
+router.get(
+  "/get-comment",
+  auth,
+  validation(getCommentSchema),
+  postServices.getComment
 );
 router.delete(
   "/delete-comment",

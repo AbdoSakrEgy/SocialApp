@@ -7,6 +7,8 @@ import {
   addCommentSchema,
   deleteCommentSchema,
   updateCommentSchema,
+  getPostSchema,
+  getCommentSchema,
 } from "./post.validation";
 
 export type createPostDTO = z.infer<typeof createPostSchema>;
@@ -16,3 +18,5 @@ export type deletePostDTO = z.infer<typeof deletePostSchema>;
 export type addCommentDTO = z.infer<typeof addCommentSchema>;
 export type deleteCommentDTO = z.infer<typeof deleteCommentSchema>;
 export type updateCommentDTO = z.infer<typeof updateCommentSchema>;
+export type getPostDTO = z.infer<typeof getPostSchema>;
+export type getCommentDTO = z.infer<typeof getCommentSchema>;

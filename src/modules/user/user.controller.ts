@@ -15,6 +15,7 @@ import {
   uploadCoverImagesSchema,
   sendFriendRequestSchema,
   acceptFriendRequestSchema,
+  blockUserSchema,
 } from "./user.validation";
 import {
   fileTypes,
@@ -85,6 +86,19 @@ router.post(
   auth,
   validation(acceptFriendRequestSchema),
   userServices.accepetFriendRequest
+);
+router.post(
+  "/block-user",
+  auth,
+  validation(blockUserSchema),
+  userServices.blockUser
+);
+
+router.post(
+  "/unblock-user",
+  auth,
+  validation(blockUserSchema),
+  userServices.unBlockUser
 );
 
 export default router;

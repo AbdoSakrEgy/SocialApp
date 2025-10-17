@@ -93,6 +93,23 @@ class PostServices {
         if (!post) {
             throw new Errors_1.ApplicationExpection("Post not found or you don't have access to like this post", 404);
         }
+        // step: check if user can like
+        if (!post.createdBy.equals(user._id)) {
+            const postAuther = await this.userModel.findOne({
+                filter: { _id: post.createdBy },
+            });
+            if (postAuther?.blockList.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to like this Post", 401);
+            }
+            if (post.avilableFor == post_model_1.PostAvilableForEnum.FRIENDS &&
+                !postAuther?.friends.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to like this post", 401);
+            }
+            if (post.avilableFor == post_model_1.PostAvilableForEnum.PRIVATE &&
+                !post.tags.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to like this post", 401);
+            }
+        }
         // step: add or remove like
         let updatedPost;
         if (post.likes.includes(user._id)) {
@@ -227,6 +244,34 @@ class PostServices {
         // }
         return (0, successHandler_1.successHandler)({ res, message: "Post updated successfully" });
     };
+    // ============================ getPost ============================
+    getPost = async (req, res, next) => {
+        const user = res.locals.user;
+        const { postId } = req.params;
+        // step: check post existence
+        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        if (!post) {
+            throw new Errors_1.ApplicationExpection("Post not found", 404);
+        }
+        // step: check if user can get post
+        if (!post.createdBy.equals(user._id)) {
+            const postAuther = await this.userModel.findOne({
+                filter: { _id: post.createdBy },
+            });
+            if (postAuther?.blockList.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to get this Post", 401);
+            }
+            if (post.avilableFor == post_model_1.PostAvilableForEnum.FRIENDS &&
+                !postAuther?.friends.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to get this Post", 401);
+            }
+            if (post.avilableFor == post_model_1.PostAvilableForEnum.PRIVATE &&
+                !post.tags.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to get this Post", 401);
+            }
+        }
+        return (0, successHandler_1.successHandler)({ res, result: { post } });
+    };
     // ============================ softDeletePost ============================
     softDeletePost = async (req, res, next) => {
         const user = res.locals.user;
@@ -284,13 +329,16 @@ class PostServices {
             const postAuther = await this.userModel.findOne({
                 filter: { _id: post.createdBy },
             });
+            if (postAuther?.blockList.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to comment this Post", 401);
+            }
             if (post.avilableFor == post_model_1.PostAvilableForEnum.FRIENDS &&
                 !postAuther?.friends.includes(user._id)) {
-                throw new Errors_1.ApplicationExpection("You are not authorized to comment", 400);
+                throw new Errors_1.ApplicationExpection("You are not authorized to comment", 401);
             }
             if (post.avilableFor == post_model_1.PostAvilableForEnum.PRIVATE &&
                 !post.tags.includes(user._id)) {
-                throw new Errors_1.ApplicationExpection("You are not authorized to comment", 400);
+                throw new Errors_1.ApplicationExpection("You are not authorized to comment", 401);
             }
         }
         // step: add comment
@@ -311,6 +359,45 @@ class PostServices {
             result: { updatedPost },
         });
     };
+    // ============================ getComment ============================
+    getComment = async (req, res, next) => {
+        const user = res.locals.user;
+        const { postId, commentId } = req.body;
+        // step: check post and comment existence
+        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        if (!post) {
+            throw new Errors_1.ApplicationExpection("Post not found", 404);
+        }
+        let comment;
+        if (post.comments) {
+            for (let item of post.comments) {
+                if (item?._id?.equals(commentId)) {
+                    comment = item;
+                }
+            }
+        }
+        if (!comment) {
+            throw new Errors_1.ApplicationExpection("Comment not found", 404);
+        }
+        // step: check if user can get comment
+        if (!post.createdBy.equals(user._id)) {
+            const postAuther = await this.userModel.findOne({
+                filter: { _id: post.createdBy },
+            });
+            if (postAuther?.blockList.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to get this comment", 401);
+            }
+            if (post.avilableFor == post_model_1.PostAvilableForEnum.FRIENDS &&
+                !postAuther?.friends.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to get this comment", 401);
+            }
+            if (post.avilableFor == post_model_1.PostAvilableForEnum.PRIVATE &&
+                !post.tags.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to get this comment", 401);
+            }
+        }
+        return (0, successHandler_1.successHandler)({ res, result: { comment } });
+    };
     // ============================ updateComment ============================
     updateComment = async (req, res, next) => {
         const user = res.locals.user;
@@ -320,15 +407,15 @@ class PostServices {
         if (!post) {
             throw new Errors_1.ApplicationExpection("Post not found", 404);
         }
-        let isCommentExist = false;
+        let comment;
         if (post.comments) {
-            for (let comment of post.comments) {
-                if (comment?._id?.equals(commentId)) {
-                    isCommentExist = true;
+            for (let item of post.comments) {
+                if (item?._id?.equals(commentId)) {
+                    comment = item;
                 }
             }
         }
-        if (!isCommentExist) {
+        if (!comment) {
             throw new Errors_1.ApplicationExpection("Comment not found", 404);
         }
         // step: check user authorization
@@ -359,15 +446,15 @@ class PostServices {
         if (!post) {
             throw new Errors_1.ApplicationExpection("Post not found", 404);
         }
-        let isCommentExist = false;
+        let comment;
         if (post.comments) {
-            for (let comment of post.comments) {
-                if (comment?._id?.equals(commentId)) {
-                    isCommentExist = true;
+            for (let item of post.comments) {
+                if (item?._id?.equals(commentId)) {
+                    comment = item;
                 }
             }
         }
-        if (!isCommentExist) {
+        if (!comment) {
             throw new Errors_1.ApplicationExpection("Comment not found", 404);
         }
         // step: check user authorization

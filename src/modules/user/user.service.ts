@@ -9,6 +9,7 @@ import {
   uploadAvatarImageDTO,
   sendFriendRequestDTO,
   acceptFriendRequestDTO,
+  blockUserDTO,
 } from "./user.dto";
 import {
   createPreSignedUrlToUploadFileS3,
@@ -388,5 +389,41 @@ export class UserServices implements IUserServices {
       res,
       message: "Friend request accepted successfully",
     });
+  };
+
+  // ============================ blockUser ============================
+  blockUser = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    const { blockedUser } = req.body as blockUserDTO;
+    // step: reject block himself
+    if (user._id.equals(blockedUser)) {
+      throw new ApplicationExpection("You can't block your self", 400);
+    }
+    // step: add blockedUser to blockList
+    const updatedUser = await this.userModel.findOneAndUpdate({
+      filter: { _id: user._id },
+      data: { $push: { blockList: blockedUser } },
+    });
+    return successHandler({ res, message: "User blocked successfully" });
+  };
+
+  // ============================ unBlockUser ============================
+  unBlockUser = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    const { blockedUser } = req.body as blockUserDTO;
+    // step: add blockedUser to blockList
+    const updatedUser = await this.userModel.findOneAndUpdate({
+      filter: { _id: user._id },
+      data: { $pull: { blockList: blockedUser } },
+    });
+    return successHandler({ res, message: "User unBlocked successfully" });
   };
 }

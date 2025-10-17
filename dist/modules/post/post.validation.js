@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateCommentSchema = exports.deleteCommentSchema = exports.addCommentSchema = exports.deletePostSchema = exports.updatePostSchema = exports.likePostSchema = exports.createPostSchema = void 0;
+exports.getCommentSchema = exports.getPostSchema = exports.updateCommentSchema = exports.deleteCommentSchema = exports.addCommentSchema = exports.deletePostSchema = exports.updatePostSchema = exports.likePostSchema = exports.createPostSchema = void 0;
 const zod_1 = __importDefault(require("zod"));
 const post_model_js_1 = require("./post.model.js");
 const multer_upload_js_1 = require("../../utils/multer/multer.upload.js");
@@ -82,4 +82,11 @@ exports.updateCommentSchema = zod_1.default.object({
     postId: zod_1.default.string(),
     commentId: zod_1.default.string(),
     newComment: zod_1.default.string(),
+});
+exports.getPostSchema = zod_1.default.object({
+    postId: zod_1.default.string(),
+});
+exports.getCommentSchema = zod_1.default.object({
+    postId: zod_1.default.string(),
+    commentId: zod_1.default.string(),
 });

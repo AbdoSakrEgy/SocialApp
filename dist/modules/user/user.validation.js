@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.acceptFriendRequestSchema = exports.sendFriendRequestSchema = exports.updateBasicInfoSchema = exports.deleteMultiFilesSchema = exports.createPresignedUrlToGetFileSchema = exports.uploadCoverImagesSchema = exports.uploadAvatarImageSchema = exports.uploadProfileVideoSchema = exports.uploadProfileImageSchema = void 0;
+exports.blockUserSchema = exports.acceptFriendRequestSchema = exports.sendFriendRequestSchema = exports.updateBasicInfoSchema = exports.deleteMultiFilesSchema = exports.createPresignedUrlToGetFileSchema = exports.uploadCoverImagesSchema = exports.uploadAvatarImageSchema = exports.uploadProfileVideoSchema = exports.uploadProfileImageSchema = void 0;
 const zod_1 = __importDefault(require("zod"));
 const user_model_1 = require("./user.model");
 const mongoose_1 = __importDefault(require("mongoose"));
@@ -50,4 +50,7 @@ exports.acceptFriendRequestSchema = zod_1.default.object({
         message: "Invalid ObjectId",
     })
         .transform((val) => new mongoose_1.default.Types.ObjectId(val)),
+});
+exports.blockUserSchema = zod_1.default.object({
+    blockedUser: zod_1.default.string(),
 });

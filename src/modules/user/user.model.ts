@@ -25,6 +25,7 @@ export interface IUser {
   avatarImage: string;
   coverImages: string[];
   friends: Types.ObjectId[];
+  blockList: Types.ObjectId[];
   is2FAActive: boolean;
   otp2FA: { otp: string; expiresIn: Date };
 }
@@ -95,6 +96,7 @@ const userSchema = new Schema<IUser>(
     avatarImage: { type: String },
     coverImages: { type: [{ type: String }] },
     friends: { type: [{ type: Types.ObjectId, ref: "user" }] },
+    blockList: { type: [{ type: Types.ObjectId, ref: "user" }] },
     is2FAActive: { type: Boolean, default: false },
     otp2FA: { otp: { type: String }, expiresIn: Date },
   },

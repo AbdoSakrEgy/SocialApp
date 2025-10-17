@@ -239,5 +239,31 @@ class UserServices {
             message: "Friend request accepted successfully",
         });
     };
+    // ============================ blockUser ============================
+    blockUser = async (req, res, next) => {
+        const user = res.locals.user;
+        const { blockedUser } = req.body;
+        // step: reject block himself
+        if (user._id.equals(blockedUser)) {
+            throw new Errors_1.ApplicationExpection("You can't block your self", 400);
+        }
+        // step: add blockedUser to blockList
+        const updatedUser = await this.userModel.findOneAndUpdate({
+            filter: { _id: user._id },
+            data: { $push: { blockList: blockedUser } },
+        });
+        return (0, successHandler_1.successHandler)({ res, message: "User blocked successfully" });
+    };
+    // ============================ unBlockUser ============================
+    unBlockUser = async (req, res, next) => {
+        const user = res.locals.user;
+        const { blockedUser } = req.body;
+        // step: add blockedUser to blockList
+        const updatedUser = await this.userModel.findOneAndUpdate({
+            filter: { _id: user._id },
+            data: { $pull: { blockList: blockedUser } },
+        });
+        return (0, successHandler_1.successHandler)({ res, message: "User unBlocked successfully" });
+    };
 }
 exports.UserServices = UserServices;

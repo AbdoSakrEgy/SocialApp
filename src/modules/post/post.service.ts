@@ -11,6 +11,8 @@ import {
   addCommentDTO,
   deleteCommentDTO,
   updateCommentDTO,
+  getPostDTO,
+  getCommentDTO,
 } from "./post.dto";
 import { UserRepo } from "../user/user.repo";
 import { ApplicationExpection } from "../../utils/Errors";
@@ -144,6 +146,36 @@ class PostServices implements IPostServices {
         "Post not found or you don't have access to like this post",
         404
       );
+    }
+    // step: check if user can like
+    if (!post.createdBy.equals(user._id)) {
+      const postAuther = await this.userModel.findOne({
+        filter: { _id: post.createdBy },
+      });
+      if (postAuther?.blockList.includes(user._id)) {
+        throw new ApplicationExpection(
+          "You are not authorized to like this Post",
+          401
+        );
+      }
+      if (
+        post.avilableFor == PostAvilableForEnum.FRIENDS &&
+        !postAuther?.friends.includes(user._id)
+      ) {
+        throw new ApplicationExpection(
+          "You are not authorized to like this post",
+          401
+        );
+      }
+      if (
+        post.avilableFor == PostAvilableForEnum.PRIVATE &&
+        !post.tags.includes(user._id)
+      ) {
+        throw new ApplicationExpection(
+          "You are not authorized to like this post",
+          401
+        );
+      }
     }
     // step: add or remove like
     let updatedPost;
@@ -296,6 +328,52 @@ class PostServices implements IPostServices {
     return successHandler({ res, message: "Post updated successfully" });
   };
 
+  // ============================ getPost ============================
+  getPost = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    const { postId } = req.params as unknown as getPostDTO;
+    // step: check post existence
+    const post = await this.postModel.findOne({ filter: { _id: postId } });
+    if (!post) {
+      throw new ApplicationExpection("Post not found", 404);
+    }
+    // step: check if user can get post
+    if (!post.createdBy.equals(user._id)) {
+      const postAuther = await this.userModel.findOne({
+        filter: { _id: post.createdBy },
+      });
+      if (postAuther?.blockList.includes(user._id)) {
+        throw new ApplicationExpection(
+          "You are not authorized to get this Post",
+          401
+        );
+      }
+      if (
+        post.avilableFor == PostAvilableForEnum.FRIENDS &&
+        !postAuther?.friends.includes(user._id)
+      ) {
+        throw new ApplicationExpection(
+          "You are not authorized to get this Post",
+          401
+        );
+      }
+      if (
+        post.avilableFor == PostAvilableForEnum.PRIVATE &&
+        !post.tags.includes(user._id)
+      ) {
+        throw new ApplicationExpection(
+          "You are not authorized to get this Post",
+          401
+        );
+      }
+    }
+    return successHandler({ res, result: { post } });
+  };
+
   // ============================ softDeletePost ============================
   softDeletePost = async (
     req: Request,
@@ -373,13 +451,19 @@ class PostServices implements IPostServices {
       const postAuther = await this.userModel.findOne({
         filter: { _id: post.createdBy },
       });
+      if (postAuther?.blockList.includes(user._id)) {
+        throw new ApplicationExpection(
+          "You are not authorized to comment this Post",
+          401
+        );
+      }
       if (
         post.avilableFor == PostAvilableForEnum.FRIENDS &&
         !postAuther?.friends.includes(user._id)
       ) {
         throw new ApplicationExpection(
           "You are not authorized to comment",
-          400
+          401
         );
       }
       if (
@@ -388,7 +472,7 @@ class PostServices implements IPostServices {
       ) {
         throw new ApplicationExpection(
           "You are not authorized to comment",
-          400
+          401
         );
       }
     }
@@ -411,6 +495,63 @@ class PostServices implements IPostServices {
     });
   };
 
+  // ============================ getComment ============================
+  getComment = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    const { postId, commentId } = req.body as getCommentDTO;
+    // step: check post and comment existence
+    const post = await this.postModel.findOne({ filter: { _id: postId } });
+    if (!post) {
+      throw new ApplicationExpection("Post not found", 404);
+    }
+    let comment;
+    if (post.comments) {
+      for (let item of post.comments) {
+        if (item?._id?.equals(commentId)) {
+          comment = item;
+        }
+      }
+    }
+    if (!comment) {
+      throw new ApplicationExpection("Comment not found", 404);
+    }
+    // step: check if user can get comment
+    if (!post.createdBy.equals(user._id)) {
+      const postAuther = await this.userModel.findOne({
+        filter: { _id: post.createdBy },
+      });
+      if (postAuther?.blockList.includes(user._id)) {
+        throw new ApplicationExpection(
+          "You are not authorized to get this comment",
+          401
+        );
+      }
+      if (
+        post.avilableFor == PostAvilableForEnum.FRIENDS &&
+        !postAuther?.friends.includes(user._id)
+      ) {
+        throw new ApplicationExpection(
+          "You are not authorized to get this comment",
+          401
+        );
+      }
+      if (
+        post.avilableFor == PostAvilableForEnum.PRIVATE &&
+        !post.tags.includes(user._id)
+      ) {
+        throw new ApplicationExpection(
+          "You are not authorized to get this comment",
+          401
+        );
+      }
+    }
+    return successHandler({ res, result: { comment } });
+  };
+
   // ============================ updateComment ============================
   updateComment = async (
     req: Request,
@@ -425,15 +566,15 @@ class PostServices implements IPostServices {
     if (!post) {
       throw new ApplicationExpection("Post not found", 404);
     }
-    let isCommentExist = false;
+    let comment;
     if (post.comments) {
-      for (let comment of post.comments) {
-        if (comment?._id?.equals(commentId)) {
-          isCommentExist = true;
+      for (let item of post.comments) {
+        if (item?._id?.equals(commentId)) {
+          comment = item;
         }
       }
     }
-    if (!isCommentExist) {
+    if (!comment) {
       throw new ApplicationExpection("Comment not found", 404);
     }
     // step: check user authorization
@@ -472,15 +613,15 @@ class PostServices implements IPostServices {
     if (!post) {
       throw new ApplicationExpection("Post not found", 404);
     }
-    let isCommentExist = false;
+    let comment;
     if (post.comments) {
-      for (let comment of post.comments) {
-        if (comment?._id?.equals(commentId)) {
-          isCommentExist = true;
+      for (let item of post.comments) {
+        if (item?._id?.equals(commentId)) {
+          comment = item;
         }
       }
     }
-    if (!isCommentExist) {
+    if (!comment) {
       throw new ApplicationExpection("Comment not found", 404);
     }
     // step: check user authorization

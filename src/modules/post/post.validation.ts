@@ -88,3 +88,12 @@ export const updateCommentSchema = z.object({
   commentId: z.string(),
   newComment: z.string(),
 });
+
+export const getPostSchema = z.object({
+  postId: z.string(),
+});
+
+export const getCommentSchema = z.object({
+  postId: z.string(),
+  commentId: z.string(),
+});
