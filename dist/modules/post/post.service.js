@@ -23,7 +23,7 @@ class PostServices {
         const assetsFolderId = (0, nanoid_1.nanoid)(15);
         const dest = `users/${user._id}/posts/${assetsFolderId}`;
         let attachments = [];
-        // step: check tags existance
+        // step: check tags existence
         if (tags?.length == 0) {
             const users = await this.userModel.find({
                 filter: { _id: { $in: tags } },
@@ -117,7 +117,7 @@ class PostServices {
         const newAttachments = req.files;
         let newAttachmentsKeys = [];
         let updatedPost;
-        // step: check post existance
+        // step: check post existence
         updatedPost = await this.postModel.findOne({
             filter: { _id: postId, createdBy: user._id },
         });
@@ -226,6 +226,160 @@ class PostServices {
         //   });
         // }
         return (0, successHandler_1.successHandler)({ res, message: "Post updated successfully" });
+    };
+    // ============================ softDeletePost ============================
+    softDeletePost = async (req, res, next) => {
+        const user = res.locals.user;
+        const postId = req.params.postId;
+        // step: check post existence
+        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        if (!post) {
+            throw new Errors_1.ApplicationExpection("Post not found", 404);
+        }
+        // step: check user authorization
+        if (!post.createdBy.equals(user._id)) {
+            throw new Errors_1.ApplicationExpection("You are not authorized to delete post", 401);
+        }
+        // step: delete post
+        const updatedPost = await this.postModel.findOneAndUpdate({
+            filter: { _id: postId },
+            data: { $set: { isDeleted: true } },
+        });
+        return (0, successHandler_1.successHandler)({ res, message: "Post soft deleted successfully" });
+    };
+    // ============================ hardDeletePost ============================
+    hardDeletePost = async (req, res, next) => {
+        const user = res.locals.user;
+        const postId = req.params.postId;
+        // step: check post existence
+        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        if (!post) {
+            throw new Errors_1.ApplicationExpection("Post not found", 404);
+        }
+        // step: check user avilability
+        if (!post.createdBy.equals(user._id)) {
+            throw new Errors_1.ApplicationExpection("You are not authorized to delete post", 401);
+        }
+        // step: delete post
+        const updatedPost = await this.postModel.findOneAndDelete({
+            filter: { _id: postId },
+        });
+        return (0, successHandler_1.successHandler)({ res, message: "Post hard deleted successfully" });
+    };
+    // ============================ addComment ============================
+    addComment = async (req, res, next) => {
+        const user = res.locals.user;
+        const { postId, comment } = req.body;
+        // step: check post existence
+        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        if (!post) {
+            throw new Errors_1.ApplicationExpection("Post not found", 404);
+        }
+        // step: check is comments allowed
+        if (!post.isCommentsAllowed) {
+            throw new Errors_1.ApplicationExpection("Comments not allowed", 400);
+        }
+        // step: check if user can comment
+        if (!post.createdBy.equals(user._id)) {
+            const postAuther = await this.userModel.findOne({
+                filter: { _id: post.createdBy },
+            });
+            if (post.avilableFor == post_model_1.PostAvilableForEnum.FRIENDS &&
+                !postAuther?.friends.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to comment", 400);
+            }
+            if (post.avilableFor == post_model_1.PostAvilableForEnum.PRIVATE &&
+                !post.tags.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to comment", 400);
+            }
+        }
+        // step: add comment
+        const updatedPost = await this.postModel.findOneAndUpdate({
+            filter: { _id: postId },
+            data: {
+                $push: {
+                    comments: {
+                        commenter: user._id,
+                        comment,
+                    },
+                },
+            },
+        });
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "Comment added successfully",
+            result: { updatedPost },
+        });
+    };
+    // ============================ updateComment ============================
+    updateComment = async (req, res, next) => {
+        const user = res.locals.user;
+        const { postId, commentId, newComment } = req.body;
+        // step: check post and comment existence
+        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        if (!post) {
+            throw new Errors_1.ApplicationExpection("Post not found", 404);
+        }
+        let isCommentExist = false;
+        if (post.comments) {
+            for (let comment of post.comments) {
+                if (comment?._id?.equals(commentId)) {
+                    isCommentExist = true;
+                }
+            }
+        }
+        if (!isCommentExist) {
+            throw new Errors_1.ApplicationExpection("Comment not found", 404);
+        }
+        // step: check user authorization
+        if (!post.createdBy.equals(user._id)) {
+            throw new Errors_1.ApplicationExpection("You are not authorized to update this post", 401);
+        }
+        // step: update comment
+        const updatedPost = await this.postModel.findOneAndUpdate({
+            filter: { _id: postId },
+            data: { $set: { "comments.$[elem].comment": newComment } },
+            options: {
+                arrayFilters: [{ "elem._id": commentId }],
+            },
+        });
+        console.log(updatedPost);
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "Comment updated successfully",
+            result: updatedPost,
+        });
+    };
+    // ============================ deleteComment ============================
+    deleteComment = async (req, res, next) => {
+        const user = res.locals.user;
+        const { postId, commentId } = req.body;
+        // step: check post and comment existence
+        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        if (!post) {
+            throw new Errors_1.ApplicationExpection("Post not found", 404);
+        }
+        let isCommentExist = false;
+        if (post.comments) {
+            for (let comment of post.comments) {
+                if (comment?._id?.equals(commentId)) {
+                    isCommentExist = true;
+                }
+            }
+        }
+        if (!isCommentExist) {
+            throw new Errors_1.ApplicationExpection("Comment not found", 404);
+        }
+        // step: check user authorization
+        if (!post.createdBy.equals(user._id)) {
+            throw new Errors_1.ApplicationExpection("You are not authorized to delete this post", 401);
+        }
+        // step: delete comment
+        const updatedPost = await this.postModel.findOneAndUpdate({
+            filter: { _id: postId },
+            data: { $pull: { comments: { _id: commentId } } },
+        });
+        return (0, successHandler_1.successHandler)({ res, message: "Comment deleted successfully" });
     };
 }
 exports.default = PostServices;

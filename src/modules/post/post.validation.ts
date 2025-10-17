@@ -68,3 +68,23 @@ export const updatePostSchema = z.object({
   newTags: z.array(z.string()).optional(),
   removedTags: z.array(z.string()).optional(),
 });
+
+export const deletePostSchema = z.object({
+  postId: z.string(),
+});
+
+export const addCommentSchema = z.object({
+  postId: z.string(),
+  comment: z.string(),
+});
+
+export const deleteCommentSchema = z.object({
+  postId: z.string(),
+  commentId: z.string(),
+});
+
+export const updateCommentSchema = z.object({
+  postId: z.string(),
+  commentId: z.string(),
+  newComment: z.string(),
+});

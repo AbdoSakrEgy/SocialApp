@@ -3,7 +3,15 @@ import { Response } from "express";
 import { Request } from "express";
 import { successHandler } from "../../utils/successHandler";
 import { PostRepo } from "./post.repo";
-import { createPostDTO, likePostDTO, updatePostDTO } from "./post.dto";
+import {
+  createPostDTO,
+  likePostDTO,
+  deletePostDTO,
+  updatePostDTO,
+  addCommentDTO,
+  deleteCommentDTO,
+  updateCommentDTO,
+} from "./post.dto";
 import { UserRepo } from "../user/user.repo";
 import { ApplicationExpection } from "../../utils/Errors";
 import {
@@ -56,7 +64,7 @@ class PostServices implements IPostServices {
     const dest = `users/${user._id}/posts/${assetsFolderId}`;
     let attachments: string[] = [];
 
-    // step: check tags existance
+    // step: check tags existence
     if (tags?.length == 0) {
       const users = await this.userModel.find({
         filter: { _id: { $in: tags } },
@@ -174,7 +182,7 @@ class PostServices implements IPostServices {
     let newAttachmentsKeys: string[] = [];
     let updatedPost: HydratedDocument<IPost> | null;
 
-    // step: check post existance
+    // step: check post existence
     updatedPost = await this.postModel.findOne({
       filter: { _id: postId, createdBy: user._id },
     });
@@ -286,6 +294,208 @@ class PostServices implements IPostServices {
     // }
 
     return successHandler({ res, message: "Post updated successfully" });
+  };
+
+  // ============================ softDeletePost ============================
+  softDeletePost = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    const postId = req.params.postId as unknown as deletePostDTO;
+    // step: check post existence
+    const post = await this.postModel.findOne({ filter: { _id: postId } });
+    if (!post) {
+      throw new ApplicationExpection("Post not found", 404);
+    }
+    // step: check user authorization
+    if (!post.createdBy.equals(user._id)) {
+      throw new ApplicationExpection(
+        "You are not authorized to delete post",
+        401
+      );
+    }
+    // step: delete post
+    const updatedPost = await this.postModel.findOneAndUpdate({
+      filter: { _id: postId },
+      data: { $set: { isDeleted: true } },
+    });
+    return successHandler({ res, message: "Post soft deleted successfully" });
+  };
+
+  // ============================ hardDeletePost ============================
+  hardDeletePost = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    const postId = req.params.postId as unknown as deletePostDTO;
+    // step: check post existence
+    const post = await this.postModel.findOne({ filter: { _id: postId } });
+    if (!post) {
+      throw new ApplicationExpection("Post not found", 404);
+    }
+    // step: check user avilability
+    if (!post.createdBy.equals(user._id)) {
+      throw new ApplicationExpection(
+        "You are not authorized to delete post",
+        401
+      );
+    }
+    // step: delete post
+    const updatedPost = await this.postModel.findOneAndDelete({
+      filter: { _id: postId },
+    });
+    return successHandler({ res, message: "Post hard deleted successfully" });
+  };
+
+  // ============================ addComment ============================
+  addComment = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    const { postId, comment } = req.body as unknown as addCommentDTO;
+    // step: check post existence
+    const post = await this.postModel.findOne({ filter: { _id: postId } });
+    if (!post) {
+      throw new ApplicationExpection("Post not found", 404);
+    }
+    // step: check is comments allowed
+    if (!post.isCommentsAllowed) {
+      throw new ApplicationExpection("Comments not allowed", 400);
+    }
+    // step: check if user can comment
+    if (!post.createdBy.equals(user._id)) {
+      const postAuther = await this.userModel.findOne({
+        filter: { _id: post.createdBy },
+      });
+      if (
+        post.avilableFor == PostAvilableForEnum.FRIENDS &&
+        !postAuther?.friends.includes(user._id)
+      ) {
+        throw new ApplicationExpection(
+          "You are not authorized to comment",
+          400
+        );
+      }
+      if (
+        post.avilableFor == PostAvilableForEnum.PRIVATE &&
+        !post.tags.includes(user._id)
+      ) {
+        throw new ApplicationExpection(
+          "You are not authorized to comment",
+          400
+        );
+      }
+    }
+    // step: add comment
+    const updatedPost = await this.postModel.findOneAndUpdate({
+      filter: { _id: postId },
+      data: {
+        $push: {
+          comments: {
+            commenter: user._id,
+            comment,
+          },
+        },
+      },
+    });
+    return successHandler({
+      res,
+      message: "Comment added successfully",
+      result: { updatedPost },
+    });
+  };
+
+  // ============================ updateComment ============================
+  updateComment = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    const { postId, commentId, newComment } =
+      req.body as unknown as updateCommentDTO;
+    // step: check post and comment existence
+    const post = await this.postModel.findOne({ filter: { _id: postId } });
+    if (!post) {
+      throw new ApplicationExpection("Post not found", 404);
+    }
+    let isCommentExist = false;
+    if (post.comments) {
+      for (let comment of post.comments) {
+        if (comment?._id?.equals(commentId)) {
+          isCommentExist = true;
+        }
+      }
+    }
+    if (!isCommentExist) {
+      throw new ApplicationExpection("Comment not found", 404);
+    }
+    // step: check user authorization
+    if (!post.createdBy.equals(user._id)) {
+      throw new ApplicationExpection(
+        "You are not authorized to update this post",
+        401
+      );
+    }
+    // step: update comment
+    const updatedPost = await this.postModel.findOneAndUpdate({
+      filter: { _id: postId },
+      data: { $set: { "comments.$[elem].comment": newComment } },
+      options: {
+        arrayFilters: [{ "elem._id": commentId }],
+      },
+    });
+    console.log(updatedPost);
+    return successHandler({
+      res,
+      message: "Comment updated successfully",
+      result: updatedPost,
+    });
+  };
+
+  // ============================ deleteComment ============================
+  deleteComment = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    const { postId, commentId } = req.body as unknown as deleteCommentDTO;
+    // step: check post and comment existence
+    const post = await this.postModel.findOne({ filter: { _id: postId } });
+    if (!post) {
+      throw new ApplicationExpection("Post not found", 404);
+    }
+    let isCommentExist = false;
+    if (post.comments) {
+      for (let comment of post.comments) {
+        if (comment?._id?.equals(commentId)) {
+          isCommentExist = true;
+        }
+      }
+    }
+    if (!isCommentExist) {
+      throw new ApplicationExpection("Comment not found", 404);
+    }
+    // step: check user authorization
+    if (!post.createdBy.equals(user._id)) {
+      throw new ApplicationExpection(
+        "You are not authorized to delete this post",
+        401
+      );
+    }
+    // step: delete comment
+    const updatedPost = await this.postModel.findOneAndUpdate({
+      filter: { _id: postId },
+      data: { $pull: { comments: { _id: commentId } } },
+    });
+    return successHandler({ res, message: "Comment deleted successfully" });
   };
 }
 

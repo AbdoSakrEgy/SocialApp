@@ -175,13 +175,13 @@ class UserServices {
         if (user._id == to) {
             throw new Errors_1.ApplicationExpection("You can't send friend request for your self", 400);
         }
-        // step: check to existance
+        // step: check to existence
         const friend = await this.userModel.findOne({ filter: { _id: to } });
         if (!friend) {
             throw new Errors_1.ApplicationExpection("User not found", 404);
         }
-        // step: check if friend req existance
-        const isFriendRequestExistance = await this.friendRequestModel.findOne({
+        // step: check if friend req existence
+        const isFriendRequestexistence = await this.friendRequestModel.findOne({
             filter: {
                 $or: [
                     { from: user._id, to },
@@ -189,7 +189,7 @@ class UserServices {
                 ],
             },
         });
-        if (isFriendRequestExistance) {
+        if (isFriendRequestexistence) {
             throw new Errors_1.ApplicationExpection("There is already a friend request.", 400);
         }
         // step: create friend request
@@ -210,7 +210,7 @@ class UserServices {
         const user = res.locals.user;
         const friendRequestId = req.params
             .friendRequestId;
-        // step: check friend request existance
+        // step: check friend request existence
         const friendRequest = await this.friendRequestModel.findOne({
             filter: {
                 _id: friendRequestId,
@@ -226,11 +226,11 @@ class UserServices {
             $set: { acceptedAt: new Date(Date.now()) },
         });
         // step: add (user) to (friend friends list) and add (friend) to (user friends list)
-        await this.friendRequestModel.findOneAndUpdate({
+        await this.userModel.findOneAndUpdate({
             filter: { _id: user._id },
             data: { $push: { friends: friendRequest.from } },
         });
-        await this.friendRequestModel.findOneAndUpdate({
+        await this.userModel.findOneAndUpdate({
             filter: { _id: friendRequest.from },
             data: { $push: { friends: user._id } },
         });

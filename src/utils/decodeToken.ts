@@ -24,7 +24,7 @@ export const decodeToken = async ({
   }
   // step: token validation
   let [bearer, token] = authorization.split(" ");
-  // step: check authorization existance
+  // step: check authorization existence
   if (!token) {
     throw new ApplicationExpection("Invalid authorization", 400);
   }
@@ -35,7 +35,7 @@ export const decodeToken = async ({
     privateKey = process.env.REFRESH_SEGNATURE as string;
   }
   let payload = verifyJwt({ token, privateKey }); // result || error
-  // step: user existance
+  // step: user existence
   const user = await userModel.findOne({ filter: { _id: payload.userId } });
   if (!user) {
     throw new ApplicationExpection("User not found", 404);

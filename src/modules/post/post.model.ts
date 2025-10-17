@@ -11,6 +11,12 @@ export interface IPost {
   tags: Types.ObjectId[]; // Array<Types.ObjectId>
   isDeleted: boolean;
   assetsFolderId: string;
+  comments: Array<{
+    _id?: Types.ObjectId;
+    commenter: Types.ObjectId;
+    comment: string;
+    createdAt: Date;
+  }>;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,6 +67,21 @@ const postSchema = new Schema<IPost>(
     tags: { type: [mongoose.Schema.Types.ObjectId], ref: "user" },
     isDeleted: { type: Boolean, default: false },
     assetsFolderId: { type: String },
+    comments: [
+      {
+        _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
+        commenter: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "user",
+          required: true,
+        },
+        comment: { type: String, required: true },
+        createdAt: { type: Date, default: Date.now },
+        // Date.now => you are passing the function reference — not calling it yet
+        // Date.now() => you are calling the function immediately, right when the schema is defined
+        // Date.now => return number, but mongoosy automatically converts it to a Date since the field type is Date
+      },
+    ],
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );

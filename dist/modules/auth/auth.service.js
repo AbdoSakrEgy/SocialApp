@@ -17,7 +17,7 @@ class AuthServices {
     // ============================ register ============================
     register = async (req, res, next) => {
         const { firstName, lastName, email, password } = req.body;
-        // step: check user existance
+        // step: check user existence
         const isUserExist = await this.userModel.findOne({
             filter: { email },
             options: { lean: true },
@@ -181,7 +181,7 @@ class AuthServices {
             return (0, successHandler_1.successHandler)({ res, message: "Email confirmed successfully" });
         }
         // step: case 2 email confrimed (confirm first and second email)
-        // step: check secondOtp existance
+        // step: check secondOtp existence
         if (!secondOtp) {
             return (0, successHandler_1.successHandler)({
                 res,
@@ -284,7 +284,7 @@ class AuthServices {
     // ============================ resendEmailOtp ============================
     resendEmailOtp = async (req, res, next) => {
         const { email } = req.body;
-        // step: check email existance
+        // step: check email existence
         const isUserExist = await this.userModel.findOne({ filter: { email } });
         if (!isUserExist) {
             throw new Errors_1.ApplicationExpection("User not found", 404);
@@ -353,7 +353,7 @@ class AuthServices {
     // ============================ forgetPassword ============================
     forgetPassword = async (req, res, next) => {
         const { email } = req.body;
-        // step: check email existance
+        // step: check email existence
         const isUserExist = await this.userModel.findOne({ filter: { email } });
         if (!isUserExist) {
             throw new Errors_1.ApplicationExpection("User not found", 404);
@@ -396,7 +396,7 @@ class AuthServices {
     // ============================ changePassword ============================
     changePassword = async (req, res, next) => {
         const { email, otp, newPassword } = req.body;
-        // step: check email existance
+        // step: check email existence
         const isUserExist = await this.userModel.findOne({ filter: { email } });
         if (!isUserExist) {
             throw new Errors_1.ApplicationExpection("User not found", 404);
@@ -458,7 +458,7 @@ class AuthServices {
     activeDeactive2FA = async (req, res, next) => {
         const user = res.locals.user;
         const otp = req.body?.otp;
-        // step: check otp existance
+        // step: check otp existence
         if (!otp) {
             const updatedUser = await this.userModel.findOneAndUpdate({
                 filter: { _id: user._id },

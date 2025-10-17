@@ -80,5 +80,20 @@ const postSchema = new mongoose_1.Schema({
     tags: { type: [mongoose_1.default.Schema.Types.ObjectId], ref: "user" },
     isDeleted: { type: Boolean, default: false },
     assetsFolderId: { type: String },
+    comments: [
+        {
+            _id: { type: mongoose_1.default.Schema.Types.ObjectId, auto: true },
+            commenter: {
+                type: mongoose_1.default.Schema.Types.ObjectId,
+                ref: "user",
+                required: true,
+            },
+            comment: { type: String, required: true },
+            createdAt: { type: Date, default: Date.now },
+            // Date.now => you are passing the function reference — not calling it yet
+            // Date.now() => you are calling the function immediately, right when the schema is defined
+            // Date.now => return number, but mongoosy automatically converts it to a Date since the field type is Date
+        },
+    ],
 }, { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } });
 exports.PostModel = (0, mongoose_1.model)("post", postSchema);

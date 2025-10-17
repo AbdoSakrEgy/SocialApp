@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updatePostSchema = exports.likePostSchema = exports.createPostSchema = void 0;
+exports.updateCommentSchema = exports.deleteCommentSchema = exports.addCommentSchema = exports.deletePostSchema = exports.updatePostSchema = exports.likePostSchema = exports.createPostSchema = void 0;
 const zod_1 = __importDefault(require("zod"));
 const post_model_js_1 = require("./post.model.js");
 const multer_upload_js_1 = require("../../utils/multer/multer.upload.js");
@@ -66,4 +66,20 @@ exports.updatePostSchema = zod_1.default.object({
     isCommentsAllowed: zod_1.default.string().optional(), // string not boolean, because this field will send from body form-data in postman
     newTags: zod_1.default.array(zod_1.default.string()).optional(),
     removedTags: zod_1.default.array(zod_1.default.string()).optional(),
+});
+exports.deletePostSchema = zod_1.default.object({
+    postId: zod_1.default.string(),
+});
+exports.addCommentSchema = zod_1.default.object({
+    postId: zod_1.default.string(),
+    comment: zod_1.default.string(),
+});
+exports.deleteCommentSchema = zod_1.default.object({
+    postId: zod_1.default.string(),
+    commentId: zod_1.default.string(),
+});
+exports.updateCommentSchema = zod_1.default.object({
+    postId: zod_1.default.string(),
+    commentId: zod_1.default.string(),
+    newComment: zod_1.default.string(),
 });

@@ -18,7 +18,7 @@ const decodeToken = async ({ authorization, tokenType = tokenTypes.access, }) =>
     }
     // step: token validation
     let [bearer, token] = authorization.split(" ");
-    // step: check authorization existance
+    // step: check authorization existence
     if (!token) {
         throw new Errors_js_1.ApplicationExpection("Invalid authorization", 400);
     }
@@ -30,7 +30,7 @@ const decodeToken = async ({ authorization, tokenType = tokenTypes.access, }) =>
         privateKey = process.env.REFRESH_SEGNATURE;
     }
     let payload = (0, jwt_js_1.verifyJwt)({ token, privateKey }); // result || error
-    // step: user existance
+    // step: user existence
     const user = await userModel.findOne({ filter: { _id: payload.userId } });
     if (!user) {
         throw new Errors_js_1.ApplicationExpection("User not found", 404);

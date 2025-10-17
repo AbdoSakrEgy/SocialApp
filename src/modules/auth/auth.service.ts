@@ -78,7 +78,7 @@ export class AuthServices implements IAuthServcies {
     next: NextFunction
   ): Promise<Response> => {
     const { firstName, lastName, email, password }: registerDTO = req.body;
-    // step: check user existance
+    // step: check user existence
     const isUserExist = await this.userModel.findOne({
       filter: { email },
       options: { lean: true },
@@ -278,7 +278,7 @@ export class AuthServices implements IAuthServcies {
       return successHandler({ res, message: "Email confirmed successfully" });
     }
     // step: case 2 email confrimed (confirm first and second email)
-    // step: check secondOtp existance
+    // step: check secondOtp existence
     if (!secondOtp) {
       return successHandler({
         res,
@@ -393,7 +393,7 @@ export class AuthServices implements IAuthServcies {
     next: NextFunction
   ): Promise<Response> => {
     const { email }: resendEmailOtpDTO = req.body;
-    // step: check email existance
+    // step: check email existence
     const isUserExist = await this.userModel.findOne({ filter: { email } });
     if (!isUserExist) {
       throw new ApplicationExpection("User not found", 404);
@@ -475,7 +475,7 @@ export class AuthServices implements IAuthServcies {
     next: NextFunction
   ): Promise<Response> => {
     const { email }: forgetPasswordDTO = req.body;
-    // step: check email existance
+    // step: check email existence
     const isUserExist = await this.userModel.findOne({ filter: { email } });
     if (!isUserExist) {
       throw new ApplicationExpection("User not found", 404);
@@ -523,7 +523,7 @@ export class AuthServices implements IAuthServcies {
     next: NextFunction
   ): Promise<Response> => {
     const { email, otp, newPassword }: changePasswordDTO = req.body;
-    // step: check email existance
+    // step: check email existence
     const isUserExist = await this.userModel.findOne({ filter: { email } });
     if (!isUserExist) {
       throw new ApplicationExpection("User not found", 404);
@@ -595,7 +595,7 @@ export class AuthServices implements IAuthServcies {
   ): Promise<Response> => {
     const user = res.locals.user;
     const otp = (req.body as activeDeactive2FADTO)?.otp;
-    // step: check otp existance
+    // step: check otp existence
     if (!otp) {
       const updatedUser = await this.userModel.findOneAndUpdate({
         filter: { _id: user._id },
