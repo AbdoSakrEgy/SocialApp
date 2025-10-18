@@ -16,6 +16,7 @@ import {
   sendFriendRequestSchema,
   acceptFriendRequestSchema,
   blockUserSchema,
+  deleteFriendRequestSchema,
 } from "./user.validation";
 import {
   fileTypes,
@@ -86,6 +87,12 @@ router.post(
   auth,
   validation(acceptFriendRequestSchema),
   userServices.accepetFriendRequest
+);
+router.delete(
+  "/delete-friend-request/:friendRequestId",
+  auth,
+  validation(deleteFriendRequestSchema),
+  userServices.deleteFriendRequest
 );
 router.post(
   "/block-user",

@@ -1,3 +1,4 @@
+import { DeleteOptions } from "mongodb";
 import {
   HydratedDocument,
   Model,
@@ -6,6 +7,8 @@ import {
   QueryOptions,
   FlattenMaps,
   UpdateQuery,
+  RootFilterQuery,
+  MongooseBaseQueryOptions,
 } from "mongoose";
 
 export class DBRepo<T> {
@@ -91,6 +94,23 @@ export class DBRepo<T> {
       return await this.model.findOneAndDelete(filter, options).exec();
     }
     const doc = await this.model.findOneAndDelete(filter, options);
+    return doc;
+  };
+  // ============================ deleteMany ============================
+  deleteMany = async ({
+    filter,
+    options,
+  }: {
+    filter: RootFilterQuery<T>;
+    options?: DeleteOptions & MongooseBaseQueryOptions<T>;
+  }): Promise<any> => {
+    //! lean not working
+    // step: check if lean true, it will prevent virtuals to appear in ruselt
+    // if (options?.lean) {
+    await this.model.deleteMany(filter, options).lean(true);
+    return await this.model.deleteMany(filter, options).exec();
+    // }
+    const doc = await this.model.deleteMany(filter, options);
     return doc;
   };
 }

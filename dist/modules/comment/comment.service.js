@@ -1,0 +1,140 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CommentServices = void 0;
+const successHandler_1 = require("../../utils/successHandler");
+const post_repo_1 = require("../post/post.repo");
+const user_repo_1 = require("../user/user.repo");
+const Errors_1 = require("../../utils/Errors");
+const post_model_1 = require("../post/post.model");
+const comment_repo_1 = require("./comment.repo");
+const comment_model_1 = require("./comment.model");
+const getAllChildCommentIdsIterative_1 = require("./helpers/getAllChildCommentIdsIterative");
+class CommentServices {
+    commentModel = new comment_repo_1.CommentRepo();
+    postModel = new post_repo_1.PostRepo();
+    userModel = new user_repo_1.UserRepo();
+    constructor() { }
+    // ============================ addComment ============================
+    addComment = async (req, res, next) => {
+        const user = res.locals.user;
+        const { postId, parentCommentId = null, commentContent, mentions, } = req.body;
+        // step: check post existence
+        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        if (!post) {
+            throw new Errors_1.ApplicationExpection("Post not found", 404);
+        }
+        // step: check is comments allowed
+        if (!post.isCommentsAllowed) {
+            throw new Errors_1.ApplicationExpection("Comments not allowed", 400);
+        }
+        // step: check if user can comment
+        if (!post.createdBy.equals(user._id)) {
+            const postAuther = await this.userModel.findOne({
+                filter: { _id: post.createdBy },
+            });
+            if (postAuther?.blockList.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to comment this Post", 401);
+            }
+            if (post.avilableFor == post_model_1.PostAvilableForEnum.FRIENDS &&
+                !postAuther?.friends.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to comment", 401);
+            }
+            if (post.avilableFor == post_model_1.PostAvilableForEnum.PRIVATE &&
+                !post.tags.includes(user._id)) {
+                throw new Errors_1.ApplicationExpection("You are not authorized to comment", 401);
+            }
+        }
+        // step: add comment
+        const comment = await this.commentModel.create({
+            data: { ...req.body, commenterId: user._id },
+        });
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "Comment added successfully",
+            result: { comment },
+        });
+    };
+    // ============================ updateComment ============================
+    updateComment = async (req, res, next) => {
+        const user = res.locals.user;
+        const { postId, commentId, newCommentContent, newMentions } = req.body;
+        // step: check post existence
+        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        if (!post) {
+            throw new Errors_1.ApplicationExpection("Post not found", 404);
+        }
+        // step: check comment existence
+        const comment = await this.commentModel.findOne({
+            filter: { _id: commentId },
+        });
+        if (!comment) {
+            throw new Errors_1.ApplicationExpection("Comment not found", 404);
+        }
+        // step: check if user can update comment
+        if (!user._id.equals(comment.commenterId)) {
+            throw new Errors_1.ApplicationExpection("You are not authorized to update this comment", 401);
+        }
+        // step: update comment
+        const updatedComment = await this.commentModel.findOneAndUpdate({
+            filter: { _id: commentId },
+            data: {
+                $set: { commentContent: newCommentContent, mentions: newMentions },
+            },
+        });
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "Comment added successfully",
+            result: { updatedComment },
+        });
+    };
+    // ============================ deleteComment ============================
+    deleteComment = async (req, res, next) => {
+        const user = res.locals.user;
+        const { postId, commentId } = req.body;
+        // step: check post existence
+        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        if (!post) {
+            throw new Errors_1.ApplicationExpection("Post not found", 404);
+        }
+        // step: check comment existence
+        const comment = await this.commentModel.findOne({
+            filter: { _id: commentId },
+        });
+        if (!comment) {
+            throw new Errors_1.ApplicationExpection("Comment not found", 404);
+        }
+        // step: check if user can delete comment
+        if (!user._id.equals(comment.commenterId)) {
+            throw new Errors_1.ApplicationExpection("You are not authorized to delete this comment", 404);
+        }
+        // step: delete comment + all descendants
+        const commentWithReplies = await (0, getAllChildCommentIdsIterative_1.getAllChildCommentIds)(commentId, comment_model_1.CommentModel);
+        await this.commentModel.deleteMany({
+            filter: { _id: { $in: commentWithReplies } },
+        });
+        await this.commentModel.findOneAndDelete({ filter: { _id: commentId } });
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "Comment and child comments deleted successfully",
+        });
+    };
+    // ============================ getComment ============================
+    getComment = async (req, res, next) => {
+        const user = res.locals.user;
+        const { commentId, withChildComments = false } = req.body;
+        // step: check comment existence
+        const comment = await this.commentModel.findOne({
+            filter: { _id: commentId },
+        });
+        if (!comment) {
+            throw new Errors_1.ApplicationExpection("Comment not found", 404);
+        }
+        if (!withChildComments) {
+            return (0, successHandler_1.successHandler)({ res, result: { comment } });
+        }
+        // step: get comments
+        const childCommentIds = await (0, getAllChildCommentIdsIterative_1.getAllChildComments)(commentId, comment_model_1.CommentModel);
+        return (0, successHandler_1.successHandler)({ res, result: { comment, childCommentIds } });
+    };
+}
+exports.CommentServices = CommentServices;

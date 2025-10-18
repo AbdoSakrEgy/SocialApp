@@ -58,3 +58,7 @@ export const acceptFriendRequestSchema = z.object({
 export const blockUserSchema = z.object({
   blockedUser: z.string(),
 });
+
+export const deleteFriendRequestSchema = z.object({
+  friendRequestId: z.string(),
+});

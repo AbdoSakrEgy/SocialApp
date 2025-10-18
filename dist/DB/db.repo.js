@@ -50,5 +50,16 @@ class DBRepo {
         const doc = await this.model.findOneAndDelete(filter, options);
         return doc;
     };
+    // ============================ deleteMany ============================
+    deleteMany = async ({ filter, options, }) => {
+        //! lean not working
+        // step: check if lean true, it will prevent virtuals to appear in ruselt
+        // if (options?.lean) {
+        await this.model.deleteMany(filter, options).lean(true);
+        return await this.model.deleteMany(filter, options).exec();
+        // }
+        const doc = await this.model.deleteMany(filter, options);
+        return doc;
+    };
 }
 exports.DBRepo = DBRepo;

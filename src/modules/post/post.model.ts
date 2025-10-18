@@ -1,26 +1,6 @@
 import mongoose, { HydratedDocument, model, Schema, Types } from "mongoose";
 import { IUser } from "../user/user.model";
 
-export interface IPost {
-  content: string;
-  attachments: string[]; // Array<string>
-  createdBy: Types.ObjectId;
-  avilableFor: PostAvilableForEnum;
-  isCommentsAllowed: boolean;
-  likes: Types.ObjectId[]; // Array<Types.ObjectId>
-  tags: Types.ObjectId[]; // Array<Types.ObjectId>
-  isDeleted: boolean;
-  assetsFolderId: string;
-  comments: Array<{
-    _id?: Types.ObjectId;
-    commenter: Types.ObjectId;
-    comment: string;
-    createdAt: Date;
-  }>;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export enum PostAvilableForEnum {
   PUBLIC = "public",
   PRIVATE = "private",
@@ -47,6 +27,20 @@ export const avilabiltyConditation = (user: HydratedDocument<IUser>) => {
   ];
 };
 
+export interface IPost {
+  content: string;
+  attachments: string[]; // Array<string>
+  createdBy: Types.ObjectId;
+  avilableFor: PostAvilableForEnum;
+  isCommentsAllowed: boolean;
+  likes: Types.ObjectId[]; // Array<Types.ObjectId>
+  tags: Types.ObjectId[]; // Array<Types.ObjectId>
+  isDeleted: boolean;
+  assetsFolderId: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 const postSchema = new Schema<IPost>(
   {
     content: { type: String },
@@ -67,21 +61,6 @@ const postSchema = new Schema<IPost>(
     tags: { type: [mongoose.Schema.Types.ObjectId], ref: "user" },
     isDeleted: { type: Boolean, default: false },
     assetsFolderId: { type: String },
-    comments: [
-      {
-        _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
-        commenter: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "user",
-          required: true,
-        },
-        comment: { type: String, required: true },
-        createdAt: { type: Date, default: Date.now },
-        // Date.now => you are passing the function reference — not calling it yet
-        // Date.now() => you are calling the function immediately, right when the schema is defined
-        // Date.now => return number, but mongoosy automatically converts it to a Date since the field type is Date
-      },
-    ],
   },
   { timestamps: true, toJSON: { virtuals: true }, toObject: { virtuals: true } }
 );

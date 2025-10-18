@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.blockUserSchema = exports.acceptFriendRequestSchema = exports.sendFriendRequestSchema = exports.updateBasicInfoSchema = exports.deleteMultiFilesSchema = exports.createPresignedUrlToGetFileSchema = exports.uploadCoverImagesSchema = exports.uploadAvatarImageSchema = exports.uploadProfileVideoSchema = exports.uploadProfileImageSchema = void 0;
+exports.deleteFriendRequestSchema = exports.blockUserSchema = exports.acceptFriendRequestSchema = exports.sendFriendRequestSchema = exports.updateBasicInfoSchema = exports.deleteMultiFilesSchema = exports.createPresignedUrlToGetFileSchema = exports.uploadCoverImagesSchema = exports.uploadAvatarImageSchema = exports.uploadProfileVideoSchema = exports.uploadProfileImageSchema = void 0;
 const zod_1 = __importDefault(require("zod"));
 const user_model_1 = require("./user.model");
 const mongoose_1 = __importDefault(require("mongoose"));
@@ -53,4 +53,7 @@ exports.acceptFriendRequestSchema = zod_1.default.object({
 });
 exports.blockUserSchema = zod_1.default.object({
     blockedUser: zod_1.default.string(),
+});
+exports.deleteFriendRequestSchema = zod_1.default.object({
+    friendRequestId: zod_1.default.string(),
 });

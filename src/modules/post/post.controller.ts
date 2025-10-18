@@ -3,14 +3,10 @@ import PostServices from "./post.service";
 import { auth } from "../../middlewares/auth.middleware";
 import { validation } from "../../middlewares/validation.middleware";
 import {
-  addCommentSchema,
   createPostSchema,
-  deleteCommentSchema,
   deletePostSchema,
-  getCommentSchema,
   getPostSchema,
   likePostSchema,
-  updateCommentSchema,
   updatePostSchema,
 } from "./post.validation";
 import { multerUpload } from "../../utils/multer/multer.upload";
@@ -54,30 +50,6 @@ router.delete(
   auth,
   validation(deletePostSchema),
   postServices.hardDeletePost
-);
-router.post(
-  "/add-comment",
-  auth,
-  validation(addCommentSchema),
-  postServices.addComment
-);
-router.patch(
-  "/update-comment",
-  auth,
-  validation(updateCommentSchema),
-  postServices.updateComment
-);
-router.get(
-  "/get-comment",
-  auth,
-  validation(getCommentSchema),
-  postServices.getComment
-);
-router.delete(
-  "/delete-comment",
-  auth,
-  validation(deleteCommentSchema),
-  postServices.deleteComment
 );
 
 export default router;

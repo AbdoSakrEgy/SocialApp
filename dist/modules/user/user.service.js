@@ -239,6 +239,43 @@ class UserServices {
             message: "Friend request accepted successfully",
         });
     };
+    // ============================ deleteFriendRequest ============================
+    deleteFriendRequest = async (req, res, next) => {
+        const user = res.locals.user;
+        const { friendRequestId } = req.params;
+        // step: check friendRequest existence
+        const friendRequest = await this.friendRequestModel.findOne({
+            filter: { _id: friendRequestId },
+        });
+        if (!friendRequest) {
+            throw new Errors_1.ApplicationExpection("Friend request not found", 404);
+        }
+        // step: check auth
+        if (!user._id.equals(friendRequest.from) ||
+            user._id.equals(friendRequest.to)) {
+            throw new Errors_1.ApplicationExpection("You are not authorized to delete this friend request", 401);
+        }
+        // step: check if friends
+        if (friendRequest?.acceptedAt) {
+            //-> step: delete both users from friends
+            await this.userModel.findOneAndUpdate({
+                filter: { _id: friendRequest.from },
+                data: { $pull: { friends: friendRequest.to } },
+            });
+            await this.userModel.findOneAndUpdate({
+                filter: { _id: friendRequest.to },
+                data: { $pull: { friends: friendRequest.from } },
+            });
+            //-> step: delete friend request
+            await this.friendRequestModel.findOneAndDelete({
+                filter: { _id: friendRequestId },
+            });
+        }
+        return (0, successHandler_1.successHandler)({
+            res,
+            message: "Friend request deleted successfully",
+        });
+    };
     // ============================ blockUser ============================
     blockUser = async (req, res, next) => {
         const user = res.locals.user;

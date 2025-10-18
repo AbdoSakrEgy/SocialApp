@@ -73,27 +73,6 @@ export const deletePostSchema = z.object({
   postId: z.string(),
 });
 
-export const addCommentSchema = z.object({
-  postId: z.string(),
-  comment: z.string(),
-});
-
-export const deleteCommentSchema = z.object({
-  postId: z.string(),
-  commentId: z.string(),
-});
-
-export const updateCommentSchema = z.object({
-  postId: z.string(),
-  commentId: z.string(),
-  newComment: z.string(),
-});
-
 export const getPostSchema = z.object({
   postId: z.string(),
-});
-
-export const getCommentSchema = z.object({
-  postId: z.string(),
-  commentId: z.string(),
 });

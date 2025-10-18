@@ -7,6 +7,7 @@ import {
   sendFriendRequestSchema,
   acceptFriendRequestSchema,
   blockUserSchema,
+  deleteFriendRequestSchema,
 } from "./user.validation";
 
 export type updateBasicInfoDTO = z.infer<typeof updateBasicInfoSchema>;
@@ -18,3 +19,4 @@ export type deleteMultiFilesDTO = z.infer<typeof deleteMultiFilesSchema>;
 export type sendFriendRequestDTO = z.infer<typeof sendFriendRequestSchema>;
 export type acceptFriendRequestDTO = z.infer<typeof acceptFriendRequestSchema>;
 export type blockUserDTO = z.infer<typeof blockUserSchema>;
+export type deleteFriendRequestDTO = z.infer<typeof deleteFriendRequestSchema>;

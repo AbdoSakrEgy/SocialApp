@@ -27,6 +27,7 @@ router.delete("/delete-multi-files", (0, validation_middleware_1.validation)(use
 router.patch("/update-basic-info", auth_middleware_1.auth, (0, validation_middleware_1.validation)(user_validation_1.updateBasicInfoSchema), userServices.updateBasicInfo);
 router.post("/send-friend-request/:to", auth_middleware_1.auth, (0, validation_middleware_1.validation)(user_validation_1.sendFriendRequestSchema), userServices.sendFriendRequest);
 router.post("/accept-friend-request/:friendRequestId", auth_middleware_1.auth, (0, validation_middleware_1.validation)(user_validation_1.acceptFriendRequestSchema), userServices.accepetFriendRequest);
+router.delete("/delete-friend-request/:friendRequestId", auth_middleware_1.auth, (0, validation_middleware_1.validation)(user_validation_1.deleteFriendRequestSchema), userServices.deleteFriendRequest);
 router.post("/block-user", auth_middleware_1.auth, (0, validation_middleware_1.validation)(user_validation_1.blockUserSchema), userServices.blockUser);
 router.post("/unblock-user", auth_middleware_1.auth, (0, validation_middleware_1.validation)(user_validation_1.blockUserSchema), userServices.unBlockUser);
 exports.default = router;

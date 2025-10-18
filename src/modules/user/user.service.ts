@@ -10,6 +10,7 @@ import {
   sendFriendRequestDTO,
   acceptFriendRequestDTO,
   blockUserDTO,
+  deleteFriendRequestDTO,
 } from "./user.dto";
 import {
   createPreSignedUrlToUploadFileS3,
@@ -267,6 +268,7 @@ export class UserServices implements IUserServices {
       message: "File deleted successfully",
     });
   };
+
   // ============================ deleteMultiFiles ============================
   deleteMultiFiles = async (
     req: Request,
@@ -388,6 +390,53 @@ export class UserServices implements IUserServices {
     return successHandler({
       res,
       message: "Friend request accepted successfully",
+    });
+  };
+
+  // ============================ deleteFriendRequest ============================
+  deleteFriendRequest = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<Response> => {
+    const user = res.locals.user;
+    const { friendRequestId } = req.params as unknown as deleteFriendRequestDTO;
+    // step: check friendRequest existence
+    const friendRequest = await this.friendRequestModel.findOne({
+      filter: { _id: friendRequestId },
+    });
+    if (!friendRequest) {
+      throw new ApplicationExpection("Friend request not found", 404);
+    }
+    // step: check auth
+    if (
+      !user._id.equals(friendRequest.from) ||
+      user._id.equals(friendRequest.to)
+    ) {
+      throw new ApplicationExpection(
+        "You are not authorized to delete this friend request",
+        401
+      );
+    }
+    // step: check if friends
+    if (friendRequest?.acceptedAt) {
+      //-> step: delete both users from friends
+      await this.userModel.findOneAndUpdate({
+        filter: { _id: friendRequest.from },
+        data: { $pull: { friends: friendRequest.to } },
+      });
+      await this.userModel.findOneAndUpdate({
+        filter: { _id: friendRequest.to },
+        data: { $pull: { friends: friendRequest.from } },
+      });
+      //-> step: delete friend request
+      await this.friendRequestModel.findOneAndDelete({
+        filter: { _id: friendRequestId },
+      });
+    }
+    return successHandler({
+      res,
+      message: "Friend request deleted successfully",
     });
   };
 

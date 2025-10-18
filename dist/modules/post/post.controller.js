@@ -17,8 +17,4 @@ router.patch("/update-post/:postId", auth_middleware_1.auth, (0, multer_upload_1
 router.get("/get-post/:postId", auth_middleware_1.auth, (0, validation_middleware_1.validation)(post_validation_1.getPostSchema), postServices.getPost);
 router.delete("/soft-delete-post/:postId", auth_middleware_1.auth, (0, validation_middleware_1.validation)(post_validation_1.deletePostSchema), postServices.softDeletePost);
 router.delete("/hard-delete-post/:postId", auth_middleware_1.auth, (0, validation_middleware_1.validation)(post_validation_1.deletePostSchema), postServices.hardDeletePost);
-router.post("/add-comment", auth_middleware_1.auth, (0, validation_middleware_1.validation)(post_validation_1.addCommentSchema), postServices.addComment);
-router.patch("/update-comment", auth_middleware_1.auth, (0, validation_middleware_1.validation)(post_validation_1.updateCommentSchema), postServices.updateComment);
-router.get("/get-comment", auth_middleware_1.auth, (0, validation_middleware_1.validation)(post_validation_1.getCommentSchema), postServices.getComment);
-router.delete("/delete-comment", auth_middleware_1.auth, (0, validation_middleware_1.validation)(post_validation_1.deleteCommentSchema), postServices.deleteComment);
 exports.default = router;
