@@ -9,24 +9,30 @@ const Errors_1 = require("../../utils/Errors");
 const util_1 = require("util");
 const stream_1 = require("stream");
 const friendRequest_repo_1 = require("../../DB/repos/friendRequest.repo");
+const chat_repo_1 = require("../chat/chat.repo");
 const createS3WriteStreamPipe = (0, util_1.promisify)(stream_1.pipeline);
 class UserServices {
     userRepo = new user_repo_1.UserRepo();
     friendRequestRepo = new friendRequest_repo_1.FriendRequestRepo();
+    chatRepo = new chat_repo_1.ChatRepo();
     constructor() { }
     // ============================ userProfile ============================
     userProfile = async (req, res, next) => {
-        const userId = req.params?.userId;
+        let user = res.locals.user;
+        let userId = req.params?.userId;
         // step: if userId existence
-        if (!userId) {
-            return (0, successHandler_1.successHandler)({ res, result: res.locals.user });
+        if (userId) {
+            user = await this.userRepo.findOne({ filter: { _id: userId } });
         }
-        // step: check user existence
-        const user = await this.userRepo.findOne({ filter: { _id: userId } });
-        if (!user) {
-            throw new Errors_1.ApplicationExpection("User not found", 404);
-        }
-        return (0, successHandler_1.successHandler)({ res, result: user });
+        userId = user._id;
+        // step: return user and groups
+        const groups = await this.chatRepo.find({
+            filter: {
+                participants: { $in: [userId] },
+                groupName: { $exists: true },
+            },
+        });
+        return (0, successHandler_1.successHandler)({ res, result: { user, groups } });
     };
     // ============================ uploadProfileImage ============================
     uploadProfileImage = async (req, res, next) => {

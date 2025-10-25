@@ -14,14 +14,13 @@ export interface IMessage {
 }
 export interface IChat {
   // OVO => one to one
-  participants: mongoose.Schema.Types.ObjectId[];
-  message: IMessage[];
+  participants: Types.ObjectId[];
+  messages: IMessage[];
   // OVM => one to many
-  group?: string;
+  groupName?: string;
   groupImage: string;
-  roomId: string;
   // common
-  createdBy: mongoose.Schema.Types.ObjectId;
+  createdBy: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,15 +44,14 @@ export const chatSchema = new Schema<IChat>(
   {
     participants: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: Types.ObjectId,
         ref: "user",
         required: true,
       },
     ],
-    message: [messageSchema],
-    group: { type: String },
+    messages: [messageSchema],
+    groupName: { type: String },
     groupImage: { type: String },
-    roomId: { type: String },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "user",

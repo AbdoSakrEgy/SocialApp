@@ -5,5 +5,7 @@ const chat_service_1 = require("./chat.service");
 const auth_middleware_1 = require("../../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
 const chatServices = new chat_service_1.ChatServices();
-router.get("/:userId/chat", auth_middleware_1.auth, chatServices.getChat);
+router.get("/get-chat/:chatId", auth_middleware_1.auth, chatServices.getChat);
+router.post("/create-chat/:userId", auth_middleware_1.auth, chatServices.createChat);
+router.post("/create-chat-group", auth_middleware_1.auth, chatServices.createChatGroup);
 exports.default = router;

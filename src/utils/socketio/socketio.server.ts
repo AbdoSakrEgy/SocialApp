@@ -24,6 +24,8 @@ export const socketIOServer = (httpServer: httpServer) => {
     connect(socket);
     chatSocketServices.sayHi(socket);
     chatSocketServices.sendMessage(socket);
+    chatSocketServices.sendGroupMessage(socket);
+    chatSocketServices.joinRoom(socket);
     disconnect(socket);
   });
 };

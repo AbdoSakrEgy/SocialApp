@@ -46,15 +46,14 @@ exports.messageSchema = new mongoose_1.Schema({
 exports.chatSchema = new mongoose_1.Schema({
     participants: [
         {
-            type: mongoose_1.default.Schema.Types.ObjectId,
+            type: mongoose_1.Types.ObjectId,
             ref: "user",
             required: true,
         },
     ],
-    message: [exports.messageSchema],
-    group: { type: String },
+    messages: [exports.messageSchema],
+    groupName: { type: String },
     groupImage: { type: String },
-    roomId: { type: String },
     createdBy: {
         type: mongoose_1.default.Schema.Types.ObjectId,
         ref: "user",

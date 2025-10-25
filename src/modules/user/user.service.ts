@@ -28,6 +28,7 @@ import { ApplicationExpection } from "../../utils/Errors";
 import { promisify } from "util";
 import { pipeline } from "stream";
 import { FriendRequestRepo } from "../../DB/repos/friendRequest.repo";
+import { ChatRepo } from "../chat/chat.repo";
 const createS3WriteStreamPipe = promisify(pipeline);
 interface IUserServices {
   userProfile(
@@ -91,6 +92,7 @@ interface IUserServices {
 export class UserServices implements IUserServices {
   private userRepo = new UserRepo();
   private friendRequestRepo = new FriendRequestRepo();
+  private chatRepo = new ChatRepo();
 
   constructor() {}
   // ============================ userProfile ============================
@@ -99,17 +101,21 @@ export class UserServices implements IUserServices {
     res: Response,
     next: NextFunction
   ): Promise<Response> => {
-    const userId = req.params?.userId;
+    let user = res.locals.user;
+    let userId = req.params?.userId;
     // step: if userId existence
-    if (!userId) {
-      return successHandler({ res, result: res.locals.user });
+    if (userId) {
+      user = await this.userRepo.findOne({ filter: { _id: userId } });
     }
-    // step: check user existence
-    const user = await this.userRepo.findOne({ filter: { _id: userId } });
-    if (!user) {
-      throw new ApplicationExpection("User not found", 404);
-    }
-    return successHandler({ res, result: user });
+    userId = user._id;
+    // step: return user and groups
+    const groups = await this.chatRepo.find({
+      filter: {
+        participants: { $in: [userId] },
+        groupName: { $exists: true },
+      },
+    });
+    return successHandler({ res, result: { user, groups } });
   };
 
   // ============================ uploadProfileImage ============================
