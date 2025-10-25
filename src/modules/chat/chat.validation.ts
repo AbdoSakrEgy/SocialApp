@@ -16,3 +16,12 @@ export const createChatGroupSchema = z.object({
   groupName: z.string(),
   participants: z.array(objectIdSchema),
 });
+
+export const chatMessageSchema = z.object({
+  content: z.string().min(1).max(50),
+  sendTo: z.string(),
+});
+export const chatGroupMessageSchema = z.object({
+  content: z.string().min(1).max(50),
+  groupId: z.string(),
+});

@@ -5,6 +5,7 @@ const Errors_1 = require("../Errors");
 const socketio_server_1 = require("./socketio.server");
 const user_repo_1 = require("../../modules/user/user.repo");
 const chat_repo_1 = require("../../modules/chat/chat.repo");
+const chat_validation_1 = require("../../modules/chat/chat.validation");
 class SocketioServices {
     userRepo = new user_repo_1.UserRepo();
     chatRepo = new chat_repo_1.ChatRepo();
@@ -21,11 +22,35 @@ class SocketioServices {
             }
         });
     };
+    // ========================== isUserTyping ==========================
+    isUserTyping = (socket) => {
+        socket.on("isUserTyping", async (arg, callback) => {
+            try {
+                const { sendTo, isTyping } = arg;
+                socket.to(sendTo).emit("is_user_typing", isTyping);
+            }
+            catch (err) {
+                socket.emit("custom_error", err);
+            }
+        });
+    };
+    // ========================== isUserOnline ==========================
+    isUserOnline = (socket) => {
+        socket.on("isUserOnline", async (arg, callback) => {
+            try {
+                const { sendTo, isOnline } = arg;
+                socket.to(sendTo).emit("is_user_online", isOnline);
+            }
+            catch (err) {
+                socket.emit("custom_error", err);
+            }
+        });
+    };
     // ========================== sendMessage ==========================
     sendMessage = (socket) => {
         socket.on("sendMessage", async (arg, callback) => {
             try {
-                const { sendTo, content } = arg;
+                const { sendTo, content } = chat_validation_1.chatMessageSchema.parse(arg);
                 const createdBy = socket.user?._id;
                 const to = await this.userRepo.findOne({
                     filter: { _id: sendTo },
@@ -58,11 +83,33 @@ class SocketioServices {
             }
         });
     };
+    // ========================== joinRoom ==========================
+    joinRoom = (socket) => {
+        socket.on("join_room", async (arg, callback) => {
+            try {
+                const { groupId } = arg;
+                const group = await this.chatRepo.findOne({
+                    filter: {
+                        _id: groupId,
+                        participants: { $in: [socket.user?._id] },
+                        groupName: { $exists: true },
+                    },
+                });
+                if (!group) {
+                    throw new Errors_1.ApplicationExpection("Group not found", 404);
+                }
+                socket.join(groupId);
+            }
+            catch (err) {
+                socket.emit("custom_err", err);
+            }
+        });
+    };
     // ========================== sendGroupMessage ==========================
     sendGroupMessage = (socket) => {
         socket.on("sendGroupMessage", async (arg, callback) => {
             try {
-                const { content, groupId } = arg;
+                const { content, groupId } = chat_validation_1.chatGroupMessageSchema.parse(arg);
                 const createdBy = socket.user?._id;
                 const group = await this.chatRepo.findOne({
                     filter: {
@@ -84,28 +131,6 @@ class SocketioServices {
             }
             catch (err) {
                 socket.emit("custom_error", err);
-            }
-        });
-    };
-    // ========================== joinRoom ==========================
-    joinRoom = (socket) => {
-        socket.on("join_room", async (arg, callback) => {
-            try {
-                const { groupId } = arg;
-                const group = await this.chatRepo.findOne({
-                    filter: {
-                        _id: groupId,
-                        participants: { $in: [socket.user?._id] },
-                        groupName: { $exists: true },
-                    },
-                });
-                if (!group) {
-                    throw new Errors_1.ApplicationExpection("Group not found", 404);
-                }
-                socket.join(groupId);
-            }
-            catch (err) {
-                socket.emit("custom_err", err);
             }
         });
     };
