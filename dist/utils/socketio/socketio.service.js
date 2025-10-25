@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChatSocketServices = void 0;
-const Errors_1 = require("../../utils/Errors");
-const socketio_server_1 = require("../../utils/socketio/socketio.server");
-const user_repo_1 = require("../user/user.repo");
-const chat_repo_1 = require("./chat.repo");
-class ChatSocketServices {
+exports.SocketioServices = void 0;
+const Errors_1 = require("../Errors");
+const socketio_server_1 = require("./socketio.server");
+const user_repo_1 = require("../../modules/user/user.repo");
+const chat_repo_1 = require("../../modules/chat/chat.repo");
+class SocketioServices {
     userModel = new user_repo_1.UserRepo();
     chatModel = new chat_repo_1.ChatRepo();
     constructor() { }
@@ -53,4 +53,4 @@ class ChatSocketServices {
         });
     };
 }
-exports.ChatSocketServices = ChatSocketServices;
+exports.SocketioServices = SocketioServices;

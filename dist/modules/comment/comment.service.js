@@ -10,16 +10,16 @@ const comment_repo_1 = require("./comment.repo");
 const comment_model_1 = require("./comment.model");
 const getAllChildCommentIdsIterative_1 = require("./helpers/getAllChildCommentIdsIterative");
 class CommentServices {
-    commentModel = new comment_repo_1.CommentRepo();
-    postModel = new post_repo_1.PostRepo();
-    userModel = new user_repo_1.UserRepo();
+    commentRepo = new comment_repo_1.CommentRepo();
+    postRepo = new post_repo_1.PostRepo();
+    userRepo = new user_repo_1.UserRepo();
     constructor() { }
     // ============================ addComment ============================
     addComment = async (req, res, next) => {
         const user = res.locals.user;
         const { postId, parentCommentId = null, commentContent, mentions, } = req.body;
         // step: check post existence
-        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        const post = await this.postRepo.findOne({ filter: { _id: postId } });
         if (!post) {
             throw new Errors_1.ApplicationExpection("Post not found", 404);
         }
@@ -29,7 +29,7 @@ class CommentServices {
         }
         // step: check if user can comment
         if (!post.createdBy.equals(user._id)) {
-            const postAuther = await this.userModel.findOne({
+            const postAuther = await this.userRepo.findOne({
                 filter: { _id: post.createdBy },
             });
             if (postAuther?.blockList.includes(user._id)) {
@@ -45,7 +45,7 @@ class CommentServices {
             }
         }
         // step: add comment
-        const comment = await this.commentModel.create({
+        const comment = await this.commentRepo.create({
             data: { ...req.body, commenterId: user._id },
         });
         return (0, successHandler_1.successHandler)({
@@ -59,12 +59,12 @@ class CommentServices {
         const user = res.locals.user;
         const { postId, commentId, newCommentContent, newMentions } = req.body;
         // step: check post existence
-        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        const post = await this.postRepo.findOne({ filter: { _id: postId } });
         if (!post) {
             throw new Errors_1.ApplicationExpection("Post not found", 404);
         }
         // step: check comment existence
-        const comment = await this.commentModel.findOne({
+        const comment = await this.commentRepo.findOne({
             filter: { _id: commentId },
         });
         if (!comment) {
@@ -75,7 +75,7 @@ class CommentServices {
             throw new Errors_1.ApplicationExpection("You are not authorized to update this comment", 401);
         }
         // step: update comment
-        const updatedComment = await this.commentModel.findOneAndUpdate({
+        const updatedComment = await this.commentRepo.findOneAndUpdate({
             filter: { _id: commentId },
             data: {
                 $set: { commentContent: newCommentContent, mentions: newMentions },
@@ -92,12 +92,12 @@ class CommentServices {
         const user = res.locals.user;
         const { postId, commentId } = req.body;
         // step: check post existence
-        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        const post = await this.postRepo.findOne({ filter: { _id: postId } });
         if (!post) {
             throw new Errors_1.ApplicationExpection("Post not found", 404);
         }
         // step: check comment existence
-        const comment = await this.commentModel.findOne({
+        const comment = await this.commentRepo.findOne({
             filter: { _id: commentId },
         });
         if (!comment) {
@@ -109,10 +109,10 @@ class CommentServices {
         }
         // step: delete comment + all descendants
         const commentWithReplies = await (0, getAllChildCommentIdsIterative_1.getAllChildCommentIds)(commentId, comment_model_1.CommentModel);
-        await this.commentModel.deleteMany({
+        await this.commentRepo.deleteMany({
             filter: { _id: { $in: commentWithReplies } },
         });
-        await this.commentModel.findOneAndDelete({ filter: { _id: commentId } });
+        await this.commentRepo.findOneAndDelete({ filter: { _id: commentId } });
         return (0, successHandler_1.successHandler)({
             res,
             message: "Comment and child comments deleted successfully",
@@ -123,7 +123,7 @@ class CommentServices {
         const user = res.locals.user;
         const { commentId, withChildComments = false } = req.body;
         // step: check comment existence
-        const comment = await this.commentModel.findOne({
+        const comment = await this.commentRepo.findOne({
             filter: { _id: commentId },
         });
         if (!comment) {

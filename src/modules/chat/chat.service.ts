@@ -4,14 +4,14 @@ import { ApplicationExpection } from "../../utils/Errors";
 import { ChatRepo } from "./chat.repo";
 import { successHandler } from "../../utils/successHandler";
 
-export interface IChatService {}
+export interface IChatServices {}
 
-export class ChatService implements IChatService {
+export class ChatServices implements IChatServices {
   private userRepo = new UserRepo();
   private chatRepo = new ChatRepo();
 
   constructor() {}
-
+  // ============================ getChat ============================
   getChat = async (
     req: Request,
     res: Response,

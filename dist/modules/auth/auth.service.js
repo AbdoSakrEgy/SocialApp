@@ -11,14 +11,13 @@ const send_email_1 = require("../../utils/sendEmail/send.email");
 const decodeToken_1 = require("../../utils/decodeToken");
 const user_repo_1 = require("../user/user.repo");
 class AuthServices {
-    // private userModel = new DBRepo(UserModel);
-    userModel = new user_repo_1.UserRepo();
+    userRepo = new user_repo_1.UserRepo();
     constructor() { }
     // ============================ register ============================
     register = async (req, res, next) => {
         const { firstName, lastName, email, password } = req.body;
         // step: check user existence
-        const isUserExist = await this.userModel.findOne({
+        const isUserExist = await this.userRepo.findOne({
             filter: { email },
             options: { lean: true },
         });
@@ -40,7 +39,7 @@ class AuthServices {
             throw new Errors_1.ApplicationExpection("Error while sending email", 400);
         }
         // step: create new user
-        const user = await this.userModel.create({
+        const user = await this.userRepo.create({
             data: {
                 firstName,
                 lastName,
@@ -74,7 +73,7 @@ class AuthServices {
     login = async (req, res, next) => {
         const { email, password } = req.body;
         // step: check credentials
-        const isUserExist = await this.userModel.findOne({ filter: { email } });
+        const isUserExist = await this.userRepo.findOne({ filter: { email } });
         if (!isUserExist) {
             throw new Errors_1.ApplicationExpection("Invalid credentials", 404);
         }
@@ -99,7 +98,7 @@ class AuthServices {
                 throw new Errors_1.ApplicationExpection("Error while sending email", 400);
             }
             // ->step: update user
-            const updatedUser = await this.userModel.findOneAndUpdate({
+            const updatedUser = await this.userRepo.findOneAndUpdate({
                 filter: { _id: user._id },
                 data: {
                     $set: {
@@ -160,7 +159,7 @@ class AuthServices {
     confirmEmail = async (req, res, next) => {
         const { email, firstOtp, secondOtp } = req.body;
         // step: check user exitance
-        const user = await this.userModel.findOne({ filter: { email } });
+        const user = await this.userRepo.findOne({ filter: { email } });
         if (!user) {
             throw new Errors_1.ApplicationExpection("User not found", 400);
         }
@@ -174,7 +173,7 @@ class AuthServices {
         // step: case 1 email not confrimed (confirm first email)
         if (!user.emailConfirmed) {
             // step: confirm email
-            const updatedUser = await this.userModel.findOneAndUpdate({
+            const updatedUser = await this.userRepo.findOneAndUpdate({
                 filter: { email: user.email },
                 data: { $set: { emailConfirmed: true } },
             });
@@ -206,7 +205,7 @@ class AuthServices {
         }
         // step: confirm email
         const newEmail = user.newEmail;
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { email: user.email },
             data: { $set: { email: newEmail } },
         });
@@ -264,7 +263,7 @@ class AuthServices {
             });
         }
         // step: save emailOtp, newEmail and newEmailOtp
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: {
                 $set: {
@@ -285,7 +284,7 @@ class AuthServices {
     resendEmailOtp = async (req, res, next) => {
         const { email } = req.body;
         // step: check email existence
-        const isUserExist = await this.userModel.findOne({ filter: { email } });
+        const isUserExist = await this.userRepo.findOne({ filter: { email } });
         if (!isUserExist) {
             throw new Errors_1.ApplicationExpection("User not found", 404);
         }
@@ -310,7 +309,7 @@ class AuthServices {
             throw new Errors_1.ApplicationExpection("Error while sending email", 400);
         }
         // step: update emailOtp
-        const updatedUset = await this.userModel.findOneAndUpdate({
+        const updatedUset = await this.userRepo.findOneAndUpdate({
             filter: { email: user.email },
             data: {
                 $set: {
@@ -336,7 +335,7 @@ class AuthServices {
             throw new Errors_1.ApplicationExpection("You can not make new password equal to old password", 400);
         }
         // step: update password and credentialsChangedAt
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: {
                 $set: {
@@ -354,7 +353,7 @@ class AuthServices {
     forgetPassword = async (req, res, next) => {
         const { email } = req.body;
         // step: check email existence
-        const isUserExist = await this.userModel.findOne({ filter: { email } });
+        const isUserExist = await this.userRepo.findOne({ filter: { email } });
         if (!isUserExist) {
             throw new Errors_1.ApplicationExpection("User not found", 404);
         }
@@ -379,7 +378,7 @@ class AuthServices {
             throw new Errors_1.ApplicationExpection("Error while sending email", 400);
         }
         // step: update passwordOtp
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: {
                 $set: {
@@ -397,7 +396,7 @@ class AuthServices {
     changePassword = async (req, res, next) => {
         const { email, otp, newPassword } = req.body;
         // step: check email existence
-        const isUserExist = await this.userModel.findOne({ filter: { email } });
+        const isUserExist = await this.userRepo.findOne({ filter: { email } });
         if (!isUserExist) {
             throw new Errors_1.ApplicationExpection("User not found", 404);
         }
@@ -407,7 +406,7 @@ class AuthServices {
             throw new Errors_1.ApplicationExpection("Invalid OTP", 400);
         }
         // step: change password
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { email },
             data: {
                 $set: {
@@ -438,7 +437,7 @@ class AuthServices {
             throw new Errors_1.ApplicationExpection("Error while sending email", 400);
         }
         // step: save OTP
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: {
                 $set: {
@@ -460,7 +459,7 @@ class AuthServices {
         const otp = req.body?.otp;
         // step: check otp existence
         if (!otp) {
-            const updatedUser = await this.userModel.findOneAndUpdate({
+            const updatedUser = await this.userRepo.findOneAndUpdate({
                 filter: { _id: user._id },
                 data: { $set: { is2FAActive: false } },
             });
@@ -478,7 +477,7 @@ class AuthServices {
         }
         // step: update 2fa
         console.log("object");
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: { $set: { is2FAActive: true } },
         });
@@ -487,7 +486,7 @@ class AuthServices {
     // ============================ check2FAOTP ============================
     check2FAOTP = async (req, res, next) => {
         const { userId, otp } = req.body;
-        const user = await this.userModel.findOne({ filter: { _id: userId } });
+        const user = await this.userRepo.findOne({ filter: { _id: userId } });
         // step: check OTP
         if (!user?.otp2FA?.otp) {
             throw new Errors_1.ApplicationExpection("Invalid credentials", 400);
@@ -514,7 +513,7 @@ class AuthServices {
     logout = async (req, res, next) => {
         const user = res.locals.user;
         // step: change credentialsChangedAt
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: {
                 $set: {

@@ -20,11 +20,11 @@ import {
 export interface ICommentServices {}
 
 export class CommentServices<ICommentServices> {
-  private commentModel = new CommentRepo();
-  private postModel = new PostRepo();
-  private userModel = new UserRepo();
-  constructor() {}
+  private commentRepo = new CommentRepo();
+  private postRepo = new PostRepo();
+  private userRepo = new UserRepo();
 
+  constructor() {}
   // ============================ addComment ============================
   addComment = async (
     req: Request,
@@ -39,7 +39,7 @@ export class CommentServices<ICommentServices> {
       mentions,
     } = req.body as addCommentDTO;
     // step: check post existence
-    const post = await this.postModel.findOne({ filter: { _id: postId } });
+    const post = await this.postRepo.findOne({ filter: { _id: postId } });
     if (!post) {
       throw new ApplicationExpection("Post not found", 404);
     }
@@ -49,7 +49,7 @@ export class CommentServices<ICommentServices> {
     }
     // step: check if user can comment
     if (!post.createdBy.equals(user._id)) {
-      const postAuther = await this.userModel.findOne({
+      const postAuther = await this.userRepo.findOne({
         filter: { _id: post.createdBy },
       });
       if (postAuther?.blockList.includes(user._id)) {
@@ -78,7 +78,7 @@ export class CommentServices<ICommentServices> {
       }
     }
     // step: add comment
-    const comment = await this.commentModel.create({
+    const comment = await this.commentRepo.create({
       data: { ...req.body, commenterId: user._id },
     });
     return successHandler({
@@ -98,12 +98,12 @@ export class CommentServices<ICommentServices> {
     const { postId, commentId, newCommentContent, newMentions } =
       req.body as updateCommentDTO;
     // step: check post existence
-    const post = await this.postModel.findOne({ filter: { _id: postId } });
+    const post = await this.postRepo.findOne({ filter: { _id: postId } });
     if (!post) {
       throw new ApplicationExpection("Post not found", 404);
     }
     // step: check comment existence
-    const comment = await this.commentModel.findOne({
+    const comment = await this.commentRepo.findOne({
       filter: { _id: commentId },
     });
     if (!comment) {
@@ -117,7 +117,7 @@ export class CommentServices<ICommentServices> {
       );
     }
     // step: update comment
-    const updatedComment = await this.commentModel.findOneAndUpdate({
+    const updatedComment = await this.commentRepo.findOneAndUpdate({
       filter: { _id: commentId },
       data: {
         $set: { commentContent: newCommentContent, mentions: newMentions },
@@ -139,12 +139,12 @@ export class CommentServices<ICommentServices> {
     const user = res.locals.user;
     const { postId, commentId } = req.body as deleteCommentDTO;
     // step: check post existence
-    const post = await this.postModel.findOne({ filter: { _id: postId } });
+    const post = await this.postRepo.findOne({ filter: { _id: postId } });
     if (!post) {
       throw new ApplicationExpection("Post not found", 404);
     }
     // step: check comment existence
-    const comment = await this.commentModel.findOne({
+    const comment = await this.commentRepo.findOne({
       filter: { _id: commentId },
     });
     if (!comment) {
@@ -162,10 +162,10 @@ export class CommentServices<ICommentServices> {
       commentId,
       CommentModel
     );
-    await this.commentModel.deleteMany({
+    await this.commentRepo.deleteMany({
       filter: { _id: { $in: commentWithReplies } },
     });
-    await this.commentModel.findOneAndDelete({ filter: { _id: commentId } });
+    await this.commentRepo.findOneAndDelete({ filter: { _id: commentId } });
     return successHandler({
       res,
       message: "Comment and child comments deleted successfully",
@@ -181,7 +181,7 @@ export class CommentServices<ICommentServices> {
     const user = res.locals.user;
     const { commentId, withChildComments = false } = req.body as getCommentDTO;
     // step: check comment existence
-    const comment = await this.commentModel.findOne({
+    const comment = await this.commentRepo.findOne({
       filter: { _id: commentId },
     });
     if (!comment) {

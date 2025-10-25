@@ -89,11 +89,10 @@ interface IUserServices {
 }
 
 export class UserServices implements IUserServices {
-  private userModel = new UserRepo();
-  private friendRequestModel = new FriendRequestRepo();
+  private userRepo = new UserRepo();
+  private friendRequestRepo = new FriendRequestRepo();
 
   constructor() {}
-
   // ============================ userProfile ============================
   userProfile = async (
     req: Request,
@@ -106,7 +105,7 @@ export class UserServices implements IUserServices {
       return successHandler({ res, result: res.locals.user });
     }
     // step: check user existence
-    const user = await this.userModel.findOne({ filter: { _id: userId } });
+    const user = await this.userRepo.findOne({ filter: { _id: userId } });
     if (!user) {
       throw new ApplicationExpection("User not found", 404);
     }
@@ -126,7 +125,7 @@ export class UserServices implements IUserServices {
       fileFromMulter: req.file as Express.Multer.File,
     });
     // step: update user
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: { $set: { profileImage: Key } },
     });
@@ -151,7 +150,7 @@ export class UserServices implements IUserServices {
       storeIn: StoreIn.disk,
     });
     // step: update user
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: { $set: { profileVideo: Key } },
     });
@@ -177,7 +176,7 @@ export class UserServices implements IUserServices {
       ContentType: fileType,
     });
     // step: update user
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: { $set: { avatarImage: Key } },
     });
@@ -203,7 +202,7 @@ export class UserServices implements IUserServices {
       dest: `users/${user._id}/coverImages`,
     });
     // step: update user
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: { $set: { coverImages: Keys } },
     });
@@ -302,7 +301,7 @@ export class UserServices implements IUserServices {
     const { firstName, lastName, age, gender, phone }: updateBasicInfoDTO =
       req.body;
     // step: update basic info
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: { $set: { firstName, lastName, age, gender, phone } },
     });
@@ -332,12 +331,12 @@ export class UserServices implements IUserServices {
       );
     }
     // step: check to existence
-    const friend = await this.userModel.findOne({ filter: { _id: to } });
+    const friend = await this.userRepo.findOne({ filter: { _id: to } });
     if (!friend) {
       throw new ApplicationExpection("User not found", 404);
     }
     // step: check if friend req existence
-    const isFriendRequestexistence = await this.friendRequestModel.findOne({
+    const isFriendRequestexistence = await this.friendRequestRepo.findOne({
       filter: {
         $or: [
           { from: user._id, to },
@@ -349,7 +348,7 @@ export class UserServices implements IUserServices {
       throw new ApplicationExpection("There is already a friend request.", 400);
     }
     // step: create friend request
-    const friendReq = await this.friendRequestModel.create({
+    const friendReq = await this.friendRequestRepo.create({
       data: {
         from: user._id,
         to,
@@ -372,7 +371,7 @@ export class UserServices implements IUserServices {
     const friendRequestId = req.params
       .friendRequestId as unknown as acceptFriendRequestDTO;
     // step: check friend request existence
-    const friendRequest = await this.friendRequestModel.findOne({
+    const friendRequest = await this.friendRequestRepo.findOne({
       filter: {
         _id: friendRequestId,
         to: user._id,
@@ -387,11 +386,11 @@ export class UserServices implements IUserServices {
       $set: { acceptedAt: new Date(Date.now()) },
     });
     // step: add (user) to (friend friends list) and add (friend) to (user friends list)
-    await this.userModel.findOneAndUpdate({
+    await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: { $push: { friends: friendRequest.from } },
     });
-    await this.userModel.findOneAndUpdate({
+    await this.userRepo.findOneAndUpdate({
       filter: { _id: friendRequest.from },
       data: { $push: { friends: user._id } },
     });
@@ -411,7 +410,7 @@ export class UserServices implements IUserServices {
     const user = res.locals.user;
     const { friendRequestId } = req.params as unknown as deleteFriendRequestDTO;
     // step: check friendRequest existence
-    const friendRequest = await this.friendRequestModel.findOne({
+    const friendRequest = await this.friendRequestRepo.findOne({
       filter: { _id: friendRequestId },
     });
     if (!friendRequest) {
@@ -430,16 +429,16 @@ export class UserServices implements IUserServices {
     // step: check if friends
     if (friendRequest?.acceptedAt) {
       //-> step: delete both users from friends
-      await this.userModel.findOneAndUpdate({
+      await this.userRepo.findOneAndUpdate({
         filter: { _id: friendRequest.from },
         data: { $pull: { friends: friendRequest.to } },
       });
-      await this.userModel.findOneAndUpdate({
+      await this.userRepo.findOneAndUpdate({
         filter: { _id: friendRequest.to },
         data: { $pull: { friends: friendRequest.from } },
       });
       //-> step: delete friend request
-      await this.friendRequestModel.findOneAndDelete({
+      await this.friendRequestRepo.findOneAndDelete({
         filter: { _id: friendRequestId },
       });
     }
@@ -462,7 +461,7 @@ export class UserServices implements IUserServices {
       throw new ApplicationExpection("You can't block your self", 400);
     }
     // step: add blockedUser to blockList
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: { $push: { blockList: blockedUser } },
     });
@@ -478,7 +477,7 @@ export class UserServices implements IUserServices {
     const user = res.locals.user;
     const { blockedUser } = req.body as blockUserDTO;
     // step: add blockedUser to blockList
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: { $pull: { blockList: blockedUser } },
     });

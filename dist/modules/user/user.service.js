@@ -11,8 +11,8 @@ const stream_1 = require("stream");
 const friendRequest_repo_1 = require("../../DB/repos/friendRequest.repo");
 const createS3WriteStreamPipe = (0, util_1.promisify)(stream_1.pipeline);
 class UserServices {
-    userModel = new user_repo_1.UserRepo();
-    friendRequestModel = new friendRequest_repo_1.FriendRequestRepo();
+    userRepo = new user_repo_1.UserRepo();
+    friendRequestRepo = new friendRequest_repo_1.FriendRequestRepo();
     constructor() { }
     // ============================ userProfile ============================
     userProfile = async (req, res, next) => {
@@ -22,7 +22,7 @@ class UserServices {
             return (0, successHandler_1.successHandler)({ res, result: res.locals.user });
         }
         // step: check user existence
-        const user = await this.userModel.findOne({ filter: { _id: userId } });
+        const user = await this.userRepo.findOne({ filter: { _id: userId } });
         if (!user) {
             throw new Errors_1.ApplicationExpection("User not found", 404);
         }
@@ -37,7 +37,7 @@ class UserServices {
             fileFromMulter: req.file,
         });
         // step: update user
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: { $set: { profileImage: Key } },
         });
@@ -57,7 +57,7 @@ class UserServices {
             storeIn: multer_upload_1.StoreIn.disk,
         });
         // step: update user
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: { $set: { profileVideo: Key } },
         });
@@ -78,7 +78,7 @@ class UserServices {
             ContentType: fileType,
         });
         // step: update user
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: { $set: { avatarImage: Key } },
         });
@@ -98,7 +98,7 @@ class UserServices {
             dest: `users/${user._id}/coverImages`,
         });
         // step: update user
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: { $set: { coverImages: Keys } },
         });
@@ -163,7 +163,7 @@ class UserServices {
         const user = res.locals.user;
         const { firstName, lastName, age, gender, phone } = req.body;
         // step: update basic info
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: { $set: { firstName, lastName, age, gender, phone } },
         });
@@ -185,12 +185,12 @@ class UserServices {
             throw new Errors_1.ApplicationExpection("You can't send friend request for your self", 400);
         }
         // step: check to existence
-        const friend = await this.userModel.findOne({ filter: { _id: to } });
+        const friend = await this.userRepo.findOne({ filter: { _id: to } });
         if (!friend) {
             throw new Errors_1.ApplicationExpection("User not found", 404);
         }
         // step: check if friend req existence
-        const isFriendRequestexistence = await this.friendRequestModel.findOne({
+        const isFriendRequestexistence = await this.friendRequestRepo.findOne({
             filter: {
                 $or: [
                     { from: user._id, to },
@@ -202,7 +202,7 @@ class UserServices {
             throw new Errors_1.ApplicationExpection("There is already a friend request.", 400);
         }
         // step: create friend request
-        const friendReq = await this.friendRequestModel.create({
+        const friendReq = await this.friendRequestRepo.create({
             data: {
                 from: user._id,
                 to,
@@ -220,7 +220,7 @@ class UserServices {
         const friendRequestId = req.params
             .friendRequestId;
         // step: check friend request existence
-        const friendRequest = await this.friendRequestModel.findOne({
+        const friendRequest = await this.friendRequestRepo.findOne({
             filter: {
                 _id: friendRequestId,
                 to: user._id,
@@ -235,11 +235,11 @@ class UserServices {
             $set: { acceptedAt: new Date(Date.now()) },
         });
         // step: add (user) to (friend friends list) and add (friend) to (user friends list)
-        await this.userModel.findOneAndUpdate({
+        await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: { $push: { friends: friendRequest.from } },
         });
-        await this.userModel.findOneAndUpdate({
+        await this.userRepo.findOneAndUpdate({
             filter: { _id: friendRequest.from },
             data: { $push: { friends: user._id } },
         });
@@ -253,7 +253,7 @@ class UserServices {
         const user = res.locals.user;
         const { friendRequestId } = req.params;
         // step: check friendRequest existence
-        const friendRequest = await this.friendRequestModel.findOne({
+        const friendRequest = await this.friendRequestRepo.findOne({
             filter: { _id: friendRequestId },
         });
         if (!friendRequest) {
@@ -267,16 +267,16 @@ class UserServices {
         // step: check if friends
         if (friendRequest?.acceptedAt) {
             //-> step: delete both users from friends
-            await this.userModel.findOneAndUpdate({
+            await this.userRepo.findOneAndUpdate({
                 filter: { _id: friendRequest.from },
                 data: { $pull: { friends: friendRequest.to } },
             });
-            await this.userModel.findOneAndUpdate({
+            await this.userRepo.findOneAndUpdate({
                 filter: { _id: friendRequest.to },
                 data: { $pull: { friends: friendRequest.from } },
             });
             //-> step: delete friend request
-            await this.friendRequestModel.findOneAndDelete({
+            await this.friendRequestRepo.findOneAndDelete({
                 filter: { _id: friendRequestId },
             });
         }
@@ -294,7 +294,7 @@ class UserServices {
             throw new Errors_1.ApplicationExpection("You can't block your self", 400);
         }
         // step: add blockedUser to blockList
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: { $push: { blockList: blockedUser } },
         });
@@ -305,7 +305,7 @@ class UserServices {
         const user = res.locals.user;
         const { blockedUser } = req.body;
         // step: add blockedUser to blockList
-        const updatedUser = await this.userModel.findOneAndUpdate({
+        const updatedUser = await this.userRepo.findOneAndUpdate({
             filter: { _id: user._id },
             data: { $pull: { blockList: blockedUser } },
         });

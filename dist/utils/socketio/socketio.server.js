@@ -2,12 +2,12 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.socketIOServer = exports.connectedSockets = void 0;
 const socket_io_1 = require("socket.io");
-const decodeToken_1 = require("../../utils/decodeToken");
-const chat_socket_service_1 = require("../chat/chat.socket.service");
+const decodeToken_1 = require("../decodeToken");
+const socketio_service_1 = require("./socketio.service");
 exports.connectedSockets = new Map();
 // ======================= socketIOServer =======================
 const socketIOServer = (httpServer) => {
-    const chatSocketService = new chat_socket_service_1.ChatSocketServices();
+    const chatSocketServices = new socketio_service_1.SocketioServices();
     const ioServer = new socket_io_1.Server(httpServer, { cors: { origin: "*" } }); //* ioServer *//
     ioServer.use(async (socket, next) => {
         //* ioServer.use() *//
@@ -16,8 +16,8 @@ const socketIOServer = (httpServer) => {
     ioServer.on("connection", (socket) => {
         //* ioServer.on("connection") *//
         connect(socket);
-        chatSocketService.sayHi(socket);
-        chatSocketService.sendMessage(socket);
+        chatSocketServices.sayHi(socket);
+        chatSocketServices.sendMessage(socket);
         disconnect(socket);
     });
 };

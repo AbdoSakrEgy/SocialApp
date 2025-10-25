@@ -1,25 +1,29 @@
 import { HydratedDocument } from "mongoose";
 import { Server, Socket } from "socket.io";
-import { IUser } from "../user/user.model";
+import { IUser } from "../../modules/user/user.model";
 import { Server as httpServer } from "node:http";
-import { decodeToken } from "../../utils/decodeToken";
-import { ChatGateway } from "../chat/chat.gateway";
+import { decodeToken } from "../decodeToken";
+import { SocketioServices } from "./socketio.service";
 
 export interface AuthSocket extends Socket {
   user?: HydratedDocument<IUser>;
 }
 export let connectedSockets = new Map<string, string[]>();
 
-// ======================= initalize =======================
-export const initalize = (httpServer: httpServer) => {
-  const chatGateway = new ChatGateway();
+// ======================= socketIOServer =======================
+export const socketIOServer = (httpServer: httpServer) => {
+  const chatSocketServices = new SocketioServices();
+
   const ioServer = new Server(httpServer, { cors: { origin: "*" } }); //* ioServer *//
-  ioServer.use(async (socket: AuthSocket, next) => { //* ioServer.use() *//
+  ioServer.use(async (socket: AuthSocket, next) => {
+    //* ioServer.use() *//
     authMiddleWare(socket, next);
   });
-  ioServer.on("connection", (socket: AuthSocket) => { //* ioServer.on("connection") *//
+  ioServer.on("connection", (socket: AuthSocket) => {
+    //* ioServer.on("connection") *//
     connect(socket);
-    chatGateway.register(socket);
+    chatSocketServices.sayHi(socket);
+    chatSocketServices.sendMessage(socket);
     disconnect(socket);
   });
 };
@@ -45,7 +49,7 @@ function connect(socket: AuthSocket) {
 }
 // ======================= disconnect =======================
 function disconnect(socket: AuthSocket) {
-  socket.on("disconnect", () => {
+  socket.on("disconnect", (arg) => {
     const userSockets =
       connectedSockets.get(socket.user?._id.toString() as string) || [];
     let newUserSockets = userSockets.filter((item) => item != socket.id);

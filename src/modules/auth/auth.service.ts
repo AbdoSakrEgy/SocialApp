@@ -66,8 +66,7 @@ interface IAuthServcies {
 }
 
 export class AuthServices implements IAuthServcies {
-  // private userModel = new DBRepo(UserModel);
-  private userModel = new UserRepo();
+  private userRepo = new UserRepo();
 
   constructor() {}
 
@@ -79,7 +78,7 @@ export class AuthServices implements IAuthServcies {
   ): Promise<Response> => {
     const { firstName, lastName, email, password }: registerDTO = req.body;
     // step: check user existence
-    const isUserExist = await this.userModel.findOne({
+    const isUserExist = await this.userRepo.findOne({
       filter: { email },
       options: { lean: true },
     });
@@ -102,7 +101,7 @@ export class AuthServices implements IAuthServcies {
       throw new ApplicationExpection("Error while sending email", 400);
     }
     // step: create new user
-    const user: HydratedDocument<IUser> = await this.userModel.create({
+    const user: HydratedDocument<IUser> = await this.userRepo.create({
       data: {
         firstName,
         lastName,
@@ -149,7 +148,7 @@ export class AuthServices implements IAuthServcies {
   ): Promise<Response> => {
     const { email, password }: loginDTO = req.body;
     // step: check credentials
-    const isUserExist = await this.userModel.findOne({ filter: { email } });
+    const isUserExist = await this.userRepo.findOne({ filter: { email } });
     if (!isUserExist) {
       throw new ApplicationExpection("Invalid credentials", 404);
     }
@@ -174,7 +173,7 @@ export class AuthServices implements IAuthServcies {
         throw new ApplicationExpection("Error while sending email", 400);
       }
       // ->step: update user
-      const updatedUser = await this.userModel.findOneAndUpdate({
+      const updatedUser = await this.userRepo.findOneAndUpdate({
         filter: { _id: user._id },
         data: {
           $set: {
@@ -257,7 +256,7 @@ export class AuthServices implements IAuthServcies {
   ): Promise<Response> => {
     const { email, firstOtp, secondOtp }: confirmEmaiDTO = req.body;
     // step: check user exitance
-    const user = await this.userModel.findOne({ filter: { email } });
+    const user = await this.userRepo.findOne({ filter: { email } });
     if (!user) {
       throw new ApplicationExpection("User not found", 400);
     }
@@ -271,7 +270,7 @@ export class AuthServices implements IAuthServcies {
     // step: case 1 email not confrimed (confirm first email)
     if (!user.emailConfirmed) {
       // step: confirm email
-      const updatedUser = await this.userModel.findOneAndUpdate({
+      const updatedUser = await this.userRepo.findOneAndUpdate({
         filter: { email: user.email },
         data: { $set: { emailConfirmed: true } },
       });
@@ -304,7 +303,7 @@ export class AuthServices implements IAuthServcies {
     }
     // step: confirm email
     const newEmail = user.newEmail;
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { email: user.email },
       data: { $set: { email: newEmail } },
     });
@@ -367,7 +366,7 @@ export class AuthServices implements IAuthServcies {
       });
     }
     // step: save emailOtp, newEmail and newEmailOtp
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: {
         $set: {
@@ -394,7 +393,7 @@ export class AuthServices implements IAuthServcies {
   ): Promise<Response> => {
     const { email }: resendEmailOtpDTO = req.body;
     // step: check email existence
-    const isUserExist = await this.userModel.findOne({ filter: { email } });
+    const isUserExist = await this.userRepo.findOne({ filter: { email } });
     if (!isUserExist) {
       throw new ApplicationExpection("User not found", 404);
     }
@@ -419,7 +418,7 @@ export class AuthServices implements IAuthServcies {
       throw new ApplicationExpection("Error while sending email", 400);
     }
     // step: update emailOtp
-    const updatedUset = await this.userModel.findOneAndUpdate({
+    const updatedUset = await this.userRepo.findOneAndUpdate({
       filter: { email: user.email },
       data: {
         $set: {
@@ -453,7 +452,7 @@ export class AuthServices implements IAuthServcies {
       );
     }
     // step: update password and credentialsChangedAt
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: {
         $set: {
@@ -476,7 +475,7 @@ export class AuthServices implements IAuthServcies {
   ): Promise<Response> => {
     const { email }: forgetPasswordDTO = req.body;
     // step: check email existence
-    const isUserExist = await this.userModel.findOne({ filter: { email } });
+    const isUserExist = await this.userRepo.findOne({ filter: { email } });
     if (!isUserExist) {
       throw new ApplicationExpection("User not found", 404);
     }
@@ -501,7 +500,7 @@ export class AuthServices implements IAuthServcies {
       throw new ApplicationExpection("Error while sending email", 400);
     }
     // step: update passwordOtp
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: {
         $set: {
@@ -524,7 +523,7 @@ export class AuthServices implements IAuthServcies {
   ): Promise<Response> => {
     const { email, otp, newPassword }: changePasswordDTO = req.body;
     // step: check email existence
-    const isUserExist = await this.userModel.findOne({ filter: { email } });
+    const isUserExist = await this.userRepo.findOne({ filter: { email } });
     if (!isUserExist) {
       throw new ApplicationExpection("User not found", 404);
     }
@@ -534,7 +533,7 @@ export class AuthServices implements IAuthServcies {
       throw new ApplicationExpection("Invalid OTP", 400);
     }
     // step: change password
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { email },
       data: {
         $set: {
@@ -570,7 +569,7 @@ export class AuthServices implements IAuthServcies {
       throw new ApplicationExpection("Error while sending email", 400);
     }
     // step: save OTP
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: {
         $set: {
@@ -597,7 +596,7 @@ export class AuthServices implements IAuthServcies {
     const otp = (req.body as activeDeactive2FADTO)?.otp;
     // step: check otp existence
     if (!otp) {
-      const updatedUser = await this.userModel.findOneAndUpdate({
+      const updatedUser = await this.userRepo.findOneAndUpdate({
         filter: { _id: user._id },
         data: { $set: { is2FAActive: false } },
       });
@@ -615,7 +614,7 @@ export class AuthServices implements IAuthServcies {
     }
     // step: update 2fa
     console.log("object");
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: { $set: { is2FAActive: true } },
     });
@@ -629,7 +628,7 @@ export class AuthServices implements IAuthServcies {
     next: NextFunction
   ): Promise<Response> => {
     const { userId, otp } = req.body as check2FAOTPADTO;
-    const user = await this.userModel.findOne({ filter: { _id: userId } });
+    const user = await this.userRepo.findOne({ filter: { _id: userId } });
     // step: check OTP
     if (!user?.otp2FA?.otp) {
       throw new ApplicationExpection("Invalid credentials", 400);
@@ -669,7 +668,7 @@ export class AuthServices implements IAuthServcies {
   ): Promise<Response> => {
     const user = res.locals.user;
     // step: change credentialsChangedAt
-    const updatedUser = await this.userModel.findOneAndUpdate({
+    const updatedUser = await this.userRepo.findOneAndUpdate({
       filter: { _id: user._id },
       data: {
         $set: {

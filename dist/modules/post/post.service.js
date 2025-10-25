@@ -13,9 +13,9 @@ const createOtp_1 = require("../../utils/createOtp");
 const generateHTML_1 = require("../../utils/sendEmail/generateHTML");
 const comment_repo_1 = require("../comment/comment.repo");
 class PostServices {
-    postModel = new post_repo_1.PostRepo();
-    userModel = new user_repo_1.UserRepo();
-    commentModel = new comment_repo_1.CommentRepo();
+    postRepo = new post_repo_1.PostRepo();
+    userRepo = new user_repo_1.UserRepo();
+    commentRepo = new comment_repo_1.CommentRepo();
     constructor() { }
     // ============================ createPost ============================
     createPost = async (req, res, next) => {
@@ -27,7 +27,7 @@ class PostServices {
         let attachments = [];
         // step: check tags existence
         if (tags?.length == 0) {
-            const users = await this.userModel.find({
+            const users = await this.userRepo.find({
                 filter: { _id: { $in: tags } },
             });
             if (users?.length != tags.length) {
@@ -42,7 +42,7 @@ class PostServices {
             });
         }
         // step: create post
-        const post = await this.postModel.create({
+        const post = await this.postRepo.create({
             data: {
                 ...req.body,
                 //! next code not working
@@ -57,7 +57,7 @@ class PostServices {
         });
         // step: send email for taged users
         tags?.map(async (tag) => {
-            const taggedUser = await this.userModel.findOne({ filter: { _id: tag } });
+            const taggedUser = await this.userRepo.findOne({ filter: { _id: tag } });
             if (!taggedUser?.email || !taggedUser?.firstName) {
                 throw new Errors_1.ApplicationExpection("Tagged user not found", 404);
             }
@@ -86,7 +86,7 @@ class PostServices {
         const user = res.locals.user;
         const { postId } = req.params;
         // step: find post
-        const post = await this.postModel.findOne({
+        const post = await this.postRepo.findOne({
             filter: {
                 _id: postId,
                 $or: (0, post_model_1.avilabiltyConditation)(user),
@@ -97,7 +97,7 @@ class PostServices {
         }
         // step: check if user can like
         if (!post.createdBy.equals(user._id)) {
-            const postAuther = await this.userModel.findOne({
+            const postAuther = await this.userRepo.findOne({
                 filter: { _id: post.createdBy },
             });
             if (postAuther?.blockList.includes(user._id)) {
@@ -115,13 +115,13 @@ class PostServices {
         // step: add or remove like
         let updatedPost;
         if (post.likes.includes(user._id)) {
-            updatedPost = await this.postModel.findOneAndUpdate({
+            updatedPost = await this.postRepo.findOneAndUpdate({
                 filter: { _id: post._id },
                 data: { $pull: { likes: user._id } },
             });
         }
         else {
-            updatedPost = await this.postModel.findOneAndUpdate({
+            updatedPost = await this.postRepo.findOneAndUpdate({
                 filter: { _id: post._id },
                 data: { $addToSet: { likes: user._id } },
             });
@@ -137,7 +137,7 @@ class PostServices {
         let newAttachmentsKeys = [];
         let updatedPost;
         // step: check post existence
-        updatedPost = await this.postModel.findOne({
+        updatedPost = await this.postRepo.findOne({
             filter: { _id: postId, createdBy: user._id },
         });
         if (!updatedPost) {
@@ -187,7 +187,7 @@ class PostServices {
         // //step: update attachments
         // if (removedAttachments.length > 0) {
         //   await deleteMultiFilesS3({ Keys: removedAttachments });
-        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //   updatedPost = await this.postRepo.findOneAndUpdate({
         //     filter: { _id: postId },
         //     data: { $pull: { attachments: { $in: removedAttachments } } }, // $pull => $in | $addToSet,$push => $each
         //   });
@@ -197,35 +197,35 @@ class PostServices {
         //     dest: `users/${user._id}/posts/${updatedPost?.assetsFolderId}`,
         //     filesFromMulter: newAttachments,
         //   });
-        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //   updatedPost = await this.postRepo.findOneAndUpdate({
         //     filter: { _id: postId },
         //     data: { $addToSet: { attachments: { $each: newAttachmentsKeys } } },
         //   });
         // }
         // // step: update content
         // if (content) {
-        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //   updatedPost = await this.postRepo.findOneAndUpdate({
         //     filter: { _id: postId },
         //     data: { $set: { content } },
         //   });
         // }
         // // step:update avilableFor
         // if (avilableFor) {
-        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //   updatedPost = await this.postRepo.findOneAndUpdate({
         //     filter: { _id: postId },
         //     data: { $set: { avilableFor } },
         //   });
         // }
         // // step:update isCommentsAllowed
         // if (isCommentsAllowed) {
-        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //   updatedPost = await this.postRepo.findOneAndUpdate({
         //     filter: { _id: postId },
         //     data: { $set: { isCommentsAllowed } },
         //   });
         // }
         // // step: update tags
         // if (newTags && newTags.length > 0) {
-        //   const isUsersToTagsExist = await this.userModel.find({
+        //   const isUsersToTagsExist = await this.userRepo.find({
         //     filter: {
         //       _id: { $in: newTags },
         //     },
@@ -233,13 +233,13 @@ class PostServices {
         //   if (newTags?.length != isUsersToTagsExist?.length) {
         //     throw new ApplicationExpection("Some tags users not found", 404);
         //   }
-        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //   updatedPost = await this.postRepo.findOneAndUpdate({
         //     filter: { _id: postId },
         //     data: { $addToSet: { tags: { $each: newTags } } },
         //   });
         // }
         // if (removedTags && removedTags.length > 0) {
-        //   updatedPost = await this.postModel.findOneAndUpdate({
+        //   updatedPost = await this.postRepo.findOneAndUpdate({
         //     filter: { _id: postId },
         //     data: { $pull: { tags: { $in: removedTags } } },
         //   });
@@ -251,13 +251,13 @@ class PostServices {
         const user = res.locals.user;
         const { postId } = req.params;
         // step: check post existence
-        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        const post = await this.postRepo.findOne({ filter: { _id: postId } });
         if (!post) {
             throw new Errors_1.ApplicationExpection("Post not found", 404);
         }
         // step: check if user can get post
         if (!post.createdBy.equals(user._id)) {
-            const postAuther = await this.userModel.findOne({
+            const postAuther = await this.userRepo.findOne({
                 filter: { _id: post.createdBy },
             });
             if (postAuther?.blockList.includes(user._id)) {
@@ -279,7 +279,7 @@ class PostServices {
         const user = res.locals.user;
         const postId = req.params.postId;
         // step: check post existence
-        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        const post = await this.postRepo.findOne({ filter: { _id: postId } });
         if (!post) {
             throw new Errors_1.ApplicationExpection("Post not found", 404);
         }
@@ -288,7 +288,7 @@ class PostServices {
             throw new Errors_1.ApplicationExpection("You are not authorized to delete post", 401);
         }
         // step: delete post
-        const updatedPost = await this.postModel.findOneAndUpdate({
+        const updatedPost = await this.postRepo.findOneAndUpdate({
             filter: { _id: postId },
             data: { $set: { isDeleted: true } },
         });
@@ -299,7 +299,7 @@ class PostServices {
         const user = res.locals.user;
         const postId = req.params.postId;
         // step: check post existence
-        const post = await this.postModel.findOne({ filter: { _id: postId } });
+        const post = await this.postRepo.findOne({ filter: { _id: postId } });
         if (!post) {
             throw new Errors_1.ApplicationExpection("Post not found", 404);
         }
@@ -308,16 +308,16 @@ class PostServices {
             throw new Errors_1.ApplicationExpection("You are not authorized to delete post", 401);
         }
         // step: delete comments of post
-        const commentIds = await this.commentModel.find({
+        const commentIds = await this.commentRepo.find({
             filter: {
                 postId: post._id,
             },
         });
-        await this.commentModel.deleteMany({
+        await this.commentRepo.deleteMany({
             filter: { _id: { $in: commentIds } },
         });
         // step: delete post
-        const updatedPost = await this.postModel.findOneAndDelete({
+        const updatedPost = await this.postRepo.findOneAndDelete({
             filter: { _id: postId },
         });
         return (0, successHandler_1.successHandler)({ res, message: "Post hard deleted successfully" });

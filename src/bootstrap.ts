@@ -8,12 +8,8 @@ dotenv.config({
 import router from "./routes";
 import { connectDB } from "./DB/db.connection";
 import { ApplicationExpection, IError } from "./utils/Errors";
-import { Server, Socket } from "socket.io";
 import cors from "cors";
-import { decodeToken } from "./utils/decodeToken";
-import { IUser } from "./modules/user/user.model";
-import { HydratedDocument } from "mongoose";
-import { initalize } from "./modules/gateway/gateway";
+import { socketIOServer } from "./utils/socketio/socketio.server";
 var whitelist = [
   "http://example1.com",
   "http://example2.com",
@@ -48,7 +44,7 @@ const bootstrap = async () => {
     console.log("Backend server is running on port", process.env.PORT);
     console.log("=========================================");
   });
-  initalize(httpServer);
+  socketIOServer(httpServer);
 };
 
 export default bootstrap;

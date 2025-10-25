@@ -14,7 +14,7 @@ const routes_1 = __importDefault(require("./routes"));
 const db_connection_1 = require("./DB/db.connection");
 const Errors_1 = require("./utils/Errors");
 const cors_1 = __importDefault(require("cors"));
-const gateway_1 = require("./modules/gateway/gateway");
+const socketio_server_1 = require("./utils/socketio/socketio.server");
 var whitelist = [
     "http://example1.com",
     "http://example2.com",
@@ -47,6 +47,6 @@ const bootstrap = async () => {
         console.log("Backend server is running on port", process.env.PORT);
         console.log("=========================================");
     });
-    (0, gateway_1.initalize)(httpServer);
+    (0, socketio_server_1.socketIOServer)(httpServer);
 };
 exports.default = bootstrap;

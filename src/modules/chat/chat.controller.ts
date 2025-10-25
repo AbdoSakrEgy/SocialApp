@@ -1,10 +1,10 @@
 import { Router } from "express";
-import { ChatService } from "./chat.rest.service";
+import { ChatServices } from "./chat.service";
 import { auth } from "../../middlewares/auth.middleware";
 
 const router = Router();
-const chatService = new ChatService();
+const chatServices = new ChatServices();
 
-router.get("/:userId/chat", auth, chatService.getChat);
+router.get("/:userId/chat", auth, chatServices.getChat);
 
 export default router;

@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.socketIOServer = exports.connectedSockets = void 0;
 const socket_io_1 = require("socket.io");
-const decodeToken_1 = require("../../utils/decodeToken");
-const chat_socket_service_1 = require("../chat/chat.socket.service");
+const decodeToken_1 = require("../decodeToken");
+const chat_socket_service_1 = require("../../modules/chat/chat.socket.service");
 exports.connectedSockets = new Map();
 // ======================= socketIOServer =======================
 const socketIOServer = (httpServer) => {
