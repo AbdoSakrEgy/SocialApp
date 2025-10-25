@@ -1,5 +1,4 @@
 import { Router } from "express";
-const router = Router();
 import { UserServices } from "./user.service";
 import { auth } from "../../middlewares/auth.middleware";
 import { UserModel } from "./user.model";
@@ -23,9 +22,11 @@ import {
   multerUpload,
   StoreIn,
 } from "../../utils/multer/multer.upload";
+const router = Router();
 const userServices = new UserServices();
 
 router.get("/user-profile", auth, userServices.userProfile);
+router.get("/user-profile/:userId", auth, userServices.userProfile);
 router.patch(
   "/upload-profile-image",
   auth,

@@ -3,6 +3,7 @@ import { IUser, UserModel } from "../modules/user/user.model.js";
 import { MyJwtPayload, verifyJwt } from "./jwt.js";
 import { DBRepo } from "../DB/db.repo.js";
 import { ApplicationExpection } from "./Errors.js";
+import { HydratedDocument } from "mongoose";
 
 export enum tokenTypes {
   access = "access",
@@ -17,7 +18,7 @@ export const decodeToken = async ({
 }: {
   authorization: string;
   tokenType?: tokenTypes;
-}): Promise<{ user: IUser; payload: MyJwtPayload }> => {
+}): Promise<{ user: HydratedDocument<IUser>; payload: MyJwtPayload }> => {
   // step: bearer key
   if (!authorization.startsWith(process.env.BEARER_KEY as string)) {
     throw new ApplicationExpection("Invalid bearer key", 400);

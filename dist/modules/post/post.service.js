@@ -11,9 +11,11 @@ const post_model_1 = require("./post.model");
 const send_email_1 = require("../../utils/sendEmail/send.email");
 const createOtp_1 = require("../../utils/createOtp");
 const generateHTML_1 = require("../../utils/sendEmail/generateHTML");
+const comment_repo_1 = require("../comment/comment.repo");
 class PostServices {
     postModel = new post_repo_1.PostRepo();
     userModel = new user_repo_1.UserRepo();
+    commentModel = new comment_repo_1.CommentRepo();
     constructor() { }
     // ============================ createPost ============================
     createPost = async (req, res, next) => {
@@ -305,6 +307,15 @@ class PostServices {
         if (!post.createdBy.equals(user._id)) {
             throw new Errors_1.ApplicationExpection("You are not authorized to delete post", 401);
         }
+        // step: delete comments of post
+        const commentIds = await this.commentModel.find({
+            filter: {
+                postId: post._id,
+            },
+        });
+        await this.commentModel.deleteMany({
+            filter: { _id: { $in: commentIds } },
+        });
         // step: delete post
         const updatedPost = await this.postModel.findOneAndDelete({
             filter: { _id: postId },

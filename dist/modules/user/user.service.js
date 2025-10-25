@@ -16,7 +16,16 @@ class UserServices {
     constructor() { }
     // ============================ userProfile ============================
     userProfile = async (req, res, next) => {
-        const user = res.locals.user;
+        const userId = req.params?.userId;
+        // step: if userId existence
+        if (!userId) {
+            return (0, successHandler_1.successHandler)({ res, result: res.locals.user });
+        }
+        // step: check user existence
+        const user = await this.userModel.findOne({ filter: { _id: userId } });
+        if (!user) {
+            throw new Errors_1.ApplicationExpection("User not found", 404);
+        }
         return (0, successHandler_1.successHandler)({ res, result: user });
     };
     // ============================ uploadProfileImage ============================

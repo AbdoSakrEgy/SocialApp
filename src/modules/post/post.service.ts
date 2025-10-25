@@ -28,6 +28,7 @@ import { IUser } from "../user/user.model";
 import { sendEmail } from "../../utils/sendEmail/send.email";
 import { createOtp } from "../../utils/createOtp";
 import { template } from "../../utils/sendEmail/generateHTML";
+import { CommentRepo } from "../comment/comment.repo";
 
 interface IPostServices {
   likePost(req: Request, res: Response, next: NextFunction): Promise<Response>;
@@ -46,6 +47,7 @@ interface IPostServices {
 class PostServices implements IPostServices {
   private postModel = new PostRepo();
   private userModel = new UserRepo();
+  private commentModel = new CommentRepo();
   constructor() {}
 
   // ============================ createPost ============================
@@ -418,6 +420,15 @@ class PostServices implements IPostServices {
         401
       );
     }
+    // step: delete comments of post
+    const commentIds = await this.commentModel.find({
+      filter: {
+        postId: post._id,
+      },
+    });
+    await this.commentModel.deleteMany({
+      filter: { _id: { $in: commentIds } },
+    });
     // step: delete post
     const updatedPost = await this.postModel.findOneAndDelete({
       filter: { _id: postId },

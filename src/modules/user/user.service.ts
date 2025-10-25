@@ -100,7 +100,16 @@ export class UserServices implements IUserServices {
     res: Response,
     next: NextFunction
   ): Promise<Response> => {
-    const user = res.locals.user;
+    const userId = req.params?.userId;
+    // step: if userId existence
+    if (!userId) {
+      return successHandler({ res, result: res.locals.user });
+    }
+    // step: check user existence
+    const user = await this.userModel.findOne({ filter: { _id: userId } });
+    if (!user) {
+      throw new ApplicationExpection("User not found", 404);
+    }
     return successHandler({ res, result: user });
   };
 

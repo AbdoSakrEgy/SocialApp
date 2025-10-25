@@ -12,8 +12,28 @@ dotenv_1.default.config({
 });
 const routes_1 = __importDefault(require("./routes"));
 const db_connection_1 = require("./DB/db.connection");
+const Errors_1 = require("./utils/Errors");
+const cors_1 = __importDefault(require("cors"));
+const gateway_1 = require("./modules/gateway/gateway");
+var whitelist = [
+    "http://example1.com",
+    "http://example2.com",
+    "http://127.0.0.1:5501",
+    undefined,
+];
+var corsOptions = {
+    origin: function (origin, callback) {
+        if (whitelist.indexOf(origin) !== -1) {
+            callback(null, true);
+        }
+        else {
+            callback(new Errors_1.ApplicationExpection("Not allowed by CORS", 401));
+        }
+    },
+};
 const bootstrap = async () => {
     await (0, db_connection_1.connectDB)();
+    app.use((0, cors_1.default)(corsOptions));
     app.use(express_1.default.json());
     app.use("/api/v1", routes_1.default);
     app.use((err, req, res, next) => {
@@ -23,9 +43,10 @@ const bootstrap = async () => {
             stack: err.stack,
         });
     });
-    app.listen(process.env.PORT, () => {
+    const httpServer = app.listen(process.env.PORT, () => {
         console.log("Backend server is running on port", process.env.PORT);
         console.log("=========================================");
     });
+    (0, gateway_1.initalize)(httpServer);
 };
 exports.default = bootstrap;
