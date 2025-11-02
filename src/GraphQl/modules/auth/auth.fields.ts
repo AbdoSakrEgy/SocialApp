@@ -15,4 +15,12 @@ export const authFieldsMutation = {
     },
     resolve: authResolves.signup,
   },
+  login: {
+    type: signupRes,
+    args: {
+      email: { type: new GraphQLNonNull(GraphQLString) },
+      password: { type: new GraphQLNonNull(GraphQLString) },
+    },
+    resolve:authResolves.login
+  },
 };

@@ -4,20 +4,14 @@ import { UserRepo } from "../../../modules/user/user.repo";
 class UserResolves {
   private userRepo = new UserRepo();
 
-  hello = () => {
-    return "hello";
-  };
-  sayhi = (parent: any, args: any, context: any, info: any) => {
-    return `Hi ${args.name}`;
-  };
-  user = async () => {
-    const user = await this.userRepo.findOne({ filter: { id: "" } });
-    return user;
-  };
   getAllUsers = async (parent: any, args: any, context: any, info: any) => {
-    const { user, payload } = await authGraphQL(args.token);
+    const { user, payload } = await authGraphQL(context.token);
     const users = await this.userRepo.find({ filter: {} });
     return users;
+  };
+  getUserProfile = async (parent: any, args: any, context: any, info: any) => {
+    const { user, payload } = await authGraphQL(context.token);
+    return user;
   };
 }
 

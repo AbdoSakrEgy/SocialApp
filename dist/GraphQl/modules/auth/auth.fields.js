@@ -16,4 +16,12 @@ exports.authFieldsMutation = {
         },
         resolve: auth_resolves_1.authResolves.signup,
     },
+    login: {
+        type: qraphql_types_1.signupRes,
+        args: {
+            email: { type: new graphql_1.GraphQLNonNull(graphql_1.GraphQLString) },
+            password: { type: new graphql_1.GraphQLNonNull(graphql_1.GraphQLString) },
+        },
+        resolve: auth_resolves_1.authResolves.login
+    },
 };

@@ -46,7 +46,12 @@ const bootstrap = async () => {
         });
     });
     //TODO: GrphQL
-    app.all("/graphql", (0, express_2.createHandler)({ schema: schema_1.schema }));
+    app.all("/graphql", (0, express_2.createHandler)({
+        schema: schema_1.schema,
+        context: (req, params) => ({
+            token: req.raw.headers.authorization,
+        }),
+    }));
     //TODO: GrphQL
     const httpServer = app.listen(process.env.PORT, () => {
         console.log("Backend server is running on port", process.env.PORT);

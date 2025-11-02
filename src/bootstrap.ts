@@ -13,6 +13,7 @@ import { socketIOServer } from "./utils/socketio/socketio.server";
 import { createHandler } from "graphql-http/lib/use/express";
 import { schema } from "./GraphQl/schema";
 import { auth } from "./middlewares/auth.middleware";
+import { decodeToken, tokenTypes } from "./utils/decodeToken";
 
 var whitelist = [
   "http://example1.com",
@@ -44,7 +45,15 @@ const bootstrap = async () => {
     });
   });
   //TODO: GrphQL
-  app.all("/graphql", createHandler({ schema }));
+  app.all(
+    "/graphql",
+    createHandler({
+      schema,
+      context: (req, params) => ({
+        token: req.raw.headers.authorization,
+      }),
+    })
+  );
   //TODO: GrphQL
 
   const httpServer = app.listen(process.env.PORT, () => {
