@@ -23,3 +23,16 @@ export const auth = async (
   req.user = user;
   return next();
 };
+
+export const authGraphQL = async (token: string) => {
+  // check: authorization
+  const authorization = token;
+  if (!authorization) {
+    throw new ApplicationExpection("Authorization is required", 400);
+  }
+  const { user, payload } = await decodeToken({
+    authorization,
+    tokenType: tokenTypes.access,
+  });
+  return { user, payload };
+};

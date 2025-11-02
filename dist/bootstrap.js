@@ -15,6 +15,8 @@ const db_connection_1 = require("./DB/db.connection");
 const Errors_1 = require("./utils/Errors");
 const cors_1 = __importDefault(require("cors"));
 const socketio_server_1 = require("./utils/socketio/socketio.server");
+const express_2 = require("graphql-http/lib/use/express");
+const schema_1 = require("./GraphQl/schema");
 var whitelist = [
     "http://example1.com",
     "http://example2.com",
@@ -43,6 +45,9 @@ const bootstrap = async () => {
             stack: err.stack,
         });
     });
+    //TODO: GrphQL
+    app.all("/graphql", (0, express_2.createHandler)({ schema: schema_1.schema }));
+    //TODO: GrphQL
     const httpServer = app.listen(process.env.PORT, () => {
         console.log("Backend server is running on port", process.env.PORT);
         console.log("=========================================");

@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { ZodObject } from "zod";
 import { ValidationError } from "../utils/Errors";
+import { GraphQLError } from "graphql";
 
 export const validation = (shcema: ZodObject) => {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -14,9 +15,7 @@ export const validation = (shcema: ZodObject) => {
       attachments: req.files,
     };
     const result = shcema.safeParse(data);
-    if (result.success) {
-      next();
-    } else {
+    if (!result.success) {
       const issues = result.error?.issues;
       let messages = "";
       for (let item of issues) {
@@ -24,5 +23,18 @@ export const validation = (shcema: ZodObject) => {
       }
       throw new ValidationError(messages, 400);
     }
+    next();
   };
+};
+
+export const validationGraphQl = (shcema: ZodObject, args: any) => {
+  const result = shcema.safeParse(args);
+  if (!result.success) {
+    const issues = result.error?.issues;
+    let messages = "";
+    for (let item of issues) {
+      messages += item.message + " ||&&|| ";
+    }
+    throw new GraphQLError(messages, { extensions: { status: 400 } });
+  }
 };

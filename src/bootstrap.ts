@@ -10,6 +10,10 @@ import { connectDB } from "./DB/db.connection";
 import { ApplicationExpection, IError } from "./utils/Errors";
 import cors from "cors";
 import { socketIOServer } from "./utils/socketio/socketio.server";
+import { createHandler } from "graphql-http/lib/use/express";
+import { schema } from "./GraphQl/schema";
+import { auth } from "./middlewares/auth.middleware";
+
 var whitelist = [
   "http://example1.com",
   "http://example2.com",
@@ -39,6 +43,9 @@ const bootstrap = async () => {
       stack: err.stack,
     });
   });
+  //TODO: GrphQL
+  app.all("/graphql", createHandler({ schema }));
+  //TODO: GrphQL
 
   const httpServer = app.listen(process.env.PORT, () => {
     console.log("Backend server is running on port", process.env.PORT);
