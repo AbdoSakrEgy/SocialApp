@@ -1,20 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UserModel = exports.Role = exports.Gender = void 0;
+exports.UserModel = void 0;
 const mongoose_1 = require("mongoose");
 const bcrypt_1 = require("../../utils/bcrypt");
 const crypto_1 = require("../../utils/crypto");
-exports.Gender = {
-    male: "male",
-    female: "female",
-};
-exports.Role = {
-    admin: "admin",
-    customer: "customer",
-    seller: "seller",
-};
-Object.freeze(exports.Gender);
-Object.freeze(exports.Role);
+const user_module_types_1 = require("../../types/user.module.types");
 const userSchema = new mongoose_1.Schema({
     // personal info
     firstName: {
@@ -32,7 +22,7 @@ const userSchema = new mongoose_1.Schema({
         required: true,
     },
     age: { type: Number, min: 18, max: 200 },
-    gender: { type: String, default: exports.Gender.male, enum: Object.values(exports.Gender) },
+    gender: { type: String, default: user_module_types_1.Gender.male, enum: Object.values(user_module_types_1.Gender) },
     phone: {
         type: String,
         trim: true,
@@ -43,7 +33,7 @@ const userSchema = new mongoose_1.Schema({
         set: (value) => (value ? (0, crypto_1.encrypt)(value) : value),
         get: (value) => (value ? (0, crypto_1.decrypt)(value) : value),
     },
-    role: { type: String, enum: Object.values(exports.Role), default: exports.Role.customer },
+    role: { type: String, enum: Object.values(user_module_types_1.Role), default: user_module_types_1.Role.customer },
     // auth and OTP
     email: { type: String, required: true, unique: true },
     emailOtp: {

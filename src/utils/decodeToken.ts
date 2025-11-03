@@ -1,7 +1,7 @@
 import { NextFunction } from "express";
 import { IUser, UserModel } from "../modules/user/user.model.js";
 import { MyJwtPayload, verifyJwt } from "./jwt.js";
-import { DBRepo } from "../DB/db.repo.js";
+import { DBRepo } from "../DB/repos/db.repo.js";
 import { ApplicationExpection } from "./Errors.js";
 import { HydratedDocument } from "mongoose";
 

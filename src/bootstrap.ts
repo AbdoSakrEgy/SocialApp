@@ -12,8 +12,6 @@ import cors from "cors";
 import { socketIOServer } from "./utils/socketio/socketio.server";
 import { createHandler } from "graphql-http/lib/use/express";
 import { schema } from "./GraphQl/schema";
-import { auth } from "./middlewares/auth.middleware";
-import { decodeToken, tokenTypes } from "./utils/decodeToken";
 
 var whitelist = [
   "http://example1.com",
@@ -60,7 +58,9 @@ const bootstrap = async () => {
     console.log("Backend server is running on port", process.env.PORT);
     console.log("=========================================");
   });
+  //TODO: SocketIO
   socketIOServer(httpServer);
+  //TODO: SocketIO
 };
 
 export default bootstrap;

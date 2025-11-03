@@ -19,9 +19,7 @@ import {
 import { nanoid } from "nanoid";
 import { HydratedDocument, Types } from "mongoose";
 import {
-  avilabiltyConditation,
   IPost,
-  PostAvilableForEnum,
   PostModel,
 } from "./post.model";
 import { IUser } from "../user/user.model";
@@ -29,6 +27,8 @@ import { sendEmail } from "../../utils/sendEmail/send.email";
 import { createOtp } from "../../utils/createOtp";
 import { template } from "../../utils/sendEmail/generateHTML";
 import { CommentRepo } from "../comment/comment.repo";
+import { avilabiltyConditation } from "./helpers/avilabilty.conditation";
+import { PostAvilableForEnum } from "../../types/post.module.types";
 
 interface IPostServices {
   likePost(req: Request, res: Response, next: NextFunction): Promise<Response>;

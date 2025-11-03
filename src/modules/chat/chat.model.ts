@@ -25,9 +25,6 @@ export interface IChat {
   updatedAt: Date;
 }
 
-export type HMessageDocument = HydratedDocument<IMessage>;
-export type HChatDocument = HydratedDocument<IChat>;
-
 export const messageSchema = new Schema<IMessage>(
   {
     createdBy: {

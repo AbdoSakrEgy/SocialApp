@@ -1,5 +1,5 @@
 import { Model } from "mongoose";
-import { DBRepo } from "../../DB/db.repo";
+import { DBRepo } from "../../DB/repos/db.repo";
 import { ChatModel, IChat } from "./chat.model";
 
 export class ChatRepo extends DBRepo<IChat> {

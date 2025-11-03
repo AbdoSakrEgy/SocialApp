@@ -1,31 +1,6 @@
 import mongoose, { HydratedDocument, model, Schema, Types } from "mongoose";
 import { IUser } from "../user/user.model";
-
-export enum PostAvilableForEnum {
-  PUBLIC = "public",
-  PRIVATE = "private",
-  FRIENDS = "friends",
-}
-
-export const avilabiltyConditation = (user: HydratedDocument<IUser>) => {
-  return [
-    {
-      avilableFor: PostAvilableForEnum.PUBLIC,
-    },
-    {
-      avilableFor: PostAvilableForEnum.PRIVATE,
-      createdBy: user._id,
-    },
-    {
-      avilableFor: PostAvilableForEnum.PRIVATE,
-      tags: { $in: user._id },
-    },
-    {
-      avilableFor: PostAvilableForEnum.FRIENDS,
-      createdBy: { $in: [...user.friends, user._id] },
-    },
-  ];
-};
+import { PostAvilableForEnum } from "../../types/post.module.types";
 
 export interface IPost {
   content: string;

@@ -1,5 +1,5 @@
 import z from "zod";
-import { Gender, Role } from "../user/user.model.js";
+import { Gender, Role } from "../../types/user.module.types";
 
 export const registerSchema = z
   .object({

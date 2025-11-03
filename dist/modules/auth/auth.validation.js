@@ -5,15 +5,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.check2FAOTPSchema = exports.activeDeactive2FASchema = exports.changePasswordSchema = exports.forgetPasswordSchema = exports.updatePasswordSchema = exports.resendEmailOtpSchema = exports.updateEmailSchema = exports.confirmEmailSchema = exports.loginSchema = exports.registerSchema = void 0;
 const zod_1 = __importDefault(require("zod"));
-const user_model_js_1 = require("../user/user.model.js");
+const user_module_types_1 = require("../../types/user.module.types");
 exports.registerSchema = zod_1.default
     .object({
     firstName: zod_1.default.string().min(3).max(50),
     lastName: zod_1.default.string().min(3).max(50),
     age: zod_1.default.number().min(18).max(200).optional(),
-    gender: zod_1.default.literal([user_model_js_1.Gender.male, user_model_js_1.Gender.female]).optional(),
+    gender: zod_1.default.literal([user_module_types_1.Gender.male, user_module_types_1.Gender.female]).optional(),
     phone: zod_1.default.string().optional(),
-    role: zod_1.default.literal([user_model_js_1.Role.admin, user_model_js_1.Role.customer, user_model_js_1.Role.seller]).optional(),
+    role: zod_1.default.literal([user_module_types_1.Role.admin, user_module_types_1.Role.customer, user_module_types_1.Role.seller]).optional(),
     email: zod_1.default.email(),
     password: zod_1.default.string(),
 })

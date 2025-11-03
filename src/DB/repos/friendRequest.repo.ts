@@ -1,5 +1,5 @@
 import { Model } from "mongoose";
-import { DBRepo } from "../db.repo";
+import { DBRepo } from "./db.repo";
 import {
   FriendRequestModel,
   IFriendRequest,

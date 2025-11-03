@@ -5,8 +5,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteFriendRequestSchema = exports.blockUserSchema = exports.acceptFriendRequestSchema = exports.sendFriendRequestSchema = exports.updateBasicInfoSchema = exports.deleteMultiFilesSchema = exports.createPresignedUrlToGetFileSchema = exports.uploadCoverImagesSchema = exports.uploadAvatarImageSchema = exports.uploadProfileVideoSchema = exports.uploadProfileImageSchema = void 0;
 const zod_1 = __importDefault(require("zod"));
-const user_model_1 = require("./user.model");
 const mongoose_1 = __importDefault(require("mongoose"));
+const user_module_types_1 = require("../../types/user.module.types");
 exports.uploadProfileImageSchema = zod_1.default.object({
     profileImage: zod_1.default.object(),
 });
@@ -32,7 +32,7 @@ exports.updateBasicInfoSchema = zod_1.default.object({
     firstName: zod_1.default.string().min(3).max(50).optional(),
     lastName: zod_1.default.string().min(3).max(50).optional(),
     age: zod_1.default.number().min(18).max(200).optional(),
-    gender: zod_1.default.literal([user_model_1.Gender.male, user_model_1.Gender.female]).optional(),
+    gender: zod_1.default.literal([user_module_types_1.Gender.male, user_module_types_1.Gender.female]).optional(),
     phone: zod_1.default.string().optional(),
 });
 exports.sendFriendRequestSchema = zod_1.default.object({

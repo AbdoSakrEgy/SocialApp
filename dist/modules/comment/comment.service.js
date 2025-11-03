@@ -5,10 +5,10 @@ const successHandler_1 = require("../../utils/successHandler");
 const post_repo_1 = require("../post/post.repo");
 const user_repo_1 = require("../user/user.repo");
 const Errors_1 = require("../../utils/Errors");
-const post_model_1 = require("../post/post.model");
 const comment_repo_1 = require("./comment.repo");
 const comment_model_1 = require("./comment.model");
-const getAllChildCommentIdsIterative_1 = require("./helpers/getAllChildCommentIdsIterative");
+const comment_searcher_1 = require("./helpers/comment.searcher");
+const post_module_types_1 = require("../../types/post.module.types");
 class CommentServices {
     commentRepo = new comment_repo_1.CommentRepo();
     postRepo = new post_repo_1.PostRepo();
@@ -35,11 +35,11 @@ class CommentServices {
             if (postAuther?.blockList.includes(user._id)) {
                 throw new Errors_1.ApplicationExpection("You are not authorized to comment this Post", 401);
             }
-            if (post.avilableFor == post_model_1.PostAvilableForEnum.FRIENDS &&
+            if (post.avilableFor == post_module_types_1.PostAvilableForEnum.FRIENDS &&
                 !postAuther?.friends.includes(user._id)) {
                 throw new Errors_1.ApplicationExpection("You are not authorized to comment", 401);
             }
-            if (post.avilableFor == post_model_1.PostAvilableForEnum.PRIVATE &&
+            if (post.avilableFor == post_module_types_1.PostAvilableForEnum.PRIVATE &&
                 !post.tags.includes(user._id)) {
                 throw new Errors_1.ApplicationExpection("You are not authorized to comment", 401);
             }
@@ -108,7 +108,7 @@ class CommentServices {
             throw new Errors_1.ApplicationExpection("You are not authorized to delete this comment", 404);
         }
         // step: delete comment + all descendants
-        const commentWithReplies = await (0, getAllChildCommentIdsIterative_1.getAllChildCommentIds)(commentId, comment_model_1.CommentModel);
+        const commentWithReplies = await (0, comment_searcher_1.getAllChildCommentIds)(commentId, comment_model_1.CommentModel);
         await this.commentRepo.deleteMany({
             filter: { _id: { $in: commentWithReplies } },
         });
@@ -133,7 +133,7 @@ class CommentServices {
             return (0, successHandler_1.successHandler)({ res, result: { comment } });
         }
         // step: get comments
-        const childCommentIds = await (0, getAllChildCommentIdsIterative_1.getAllChildComments)(commentId, comment_model_1.CommentModel);
+        const childCommentIds = await (0, comment_searcher_1.getAllChildComments)(commentId, comment_model_1.CommentModel);
         return (0, successHandler_1.successHandler)({ res, result: { comment, childCommentIds } });
     };
 }

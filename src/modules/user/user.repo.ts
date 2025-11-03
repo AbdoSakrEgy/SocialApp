@@ -4,7 +4,7 @@ import {
   ProjectionFields,
   QueryOptions,
 } from "mongoose";
-import { DBRepo } from "../../DB/db.repo";
+import { DBRepo } from "../../DB/repos/db.repo";
 import { IUser, UserModel } from "./user.model";
 
 export class UserRepo extends DBRepo<IUser> {

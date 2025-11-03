@@ -57,6 +57,8 @@ const bootstrap = async () => {
         console.log("Backend server is running on port", process.env.PORT);
         console.log("=========================================");
     });
+    //TODO: SocketIO
     (0, socketio_server_1.socketIOServer)(httpServer);
+    //TODO: SocketIO
 };
 exports.default = bootstrap;

@@ -9,13 +9,13 @@ import {
   getCommentDTO,
   updateCommentDTO,
 } from "./comment.dto";
-import { PostAvilableForEnum } from "../post/post.model";
 import { CommentRepo } from "./comment.repo";
 import { CommentModel } from "./comment.model";
 import {
   getAllChildCommentIds,
   getAllChildComments,
-} from "./helpers/getAllChildCommentIdsIterative";
+} from "./helpers/comment.searcher";
+import { PostAvilableForEnum } from "../../types/post.module.types";
 
 export interface ICommentServices {}
 

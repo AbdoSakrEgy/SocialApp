@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.decodeToken = exports.tokenTypes = void 0;
 const user_model_js_1 = require("../modules/user/user.model.js");
 const jwt_js_1 = require("./jwt.js");
-const db_repo_js_1 = require("../DB/db.repo.js");
+const db_repo_js_1 = require("../DB/repos/db.repo.js");
 const Errors_js_1 = require("./Errors.js");
 var tokenTypes;
 (function (tokenTypes) {

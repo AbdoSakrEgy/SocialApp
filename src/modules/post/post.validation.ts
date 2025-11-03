@@ -1,6 +1,6 @@
 import z from "zod";
-import { PostAvilableForEnum } from "./post.model.js";
 import { fileTypes } from "../../utils/multer/multer.upload.js";
+import { PostAvilableForEnum } from "../../types/post.module.types.js";
 
 export const createPostSchema = z
   .object({

@@ -2,6 +2,7 @@ import { HydratedDocument, model, Schema, Types } from "mongoose";
 import { hash } from "../../utils/bcrypt";
 import { decrypt, encrypt } from "../../utils/crypto";
 import { ApplicationExpection } from "../../utils/Errors";
+import { Gender, Role } from "../../types/user.module.types";
 
 export interface IUser {
   firstName: string;
@@ -29,18 +30,6 @@ export interface IUser {
   is2FAActive: boolean;
   otp2FA: { otp: string; expiresIn: Date };
 }
-
-export const Gender = {
-  male: "male",
-  female: "female",
-};
-export const Role = {
-  admin: "admin",
-  customer: "customer",
-  seller: "seller",
-};
-Object.freeze(Gender);
-Object.freeze(Role);
 
 const userSchema = new Schema<IUser>(
   {

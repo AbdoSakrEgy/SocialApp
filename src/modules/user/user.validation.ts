@@ -1,6 +1,6 @@
 import z from "zod";
-import { Gender } from "./user.model";
 import mongoose from "mongoose";
+import { Gender } from "../../types/user.module.types";
 
 export const uploadProfileImageSchema = z.object({
   profileImage: z.object(),

@@ -33,34 +33,9 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PostModel = exports.avilabiltyConditation = exports.PostAvilableForEnum = void 0;
+exports.PostModel = void 0;
 const mongoose_1 = __importStar(require("mongoose"));
-var PostAvilableForEnum;
-(function (PostAvilableForEnum) {
-    PostAvilableForEnum["PUBLIC"] = "public";
-    PostAvilableForEnum["PRIVATE"] = "private";
-    PostAvilableForEnum["FRIENDS"] = "friends";
-})(PostAvilableForEnum || (exports.PostAvilableForEnum = PostAvilableForEnum = {}));
-const avilabiltyConditation = (user) => {
-    return [
-        {
-            avilableFor: PostAvilableForEnum.PUBLIC,
-        },
-        {
-            avilableFor: PostAvilableForEnum.PRIVATE,
-            createdBy: user._id,
-        },
-        {
-            avilableFor: PostAvilableForEnum.PRIVATE,
-            tags: { $in: user._id },
-        },
-        {
-            avilableFor: PostAvilableForEnum.FRIENDS,
-            createdBy: { $in: [...user.friends, user._id] },
-        },
-    ];
-};
-exports.avilabiltyConditation = avilabiltyConditation;
+const post_module_types_1 = require("../../types/post.module.types");
 const postSchema = new mongoose_1.Schema({
     content: { type: String },
     attachments: { type: [String] },
@@ -72,8 +47,8 @@ const postSchema = new mongoose_1.Schema({
     },
     avilableFor: {
         type: String,
-        enum: Object.values(PostAvilableForEnum),
-        default: PostAvilableForEnum.PUBLIC,
+        enum: Object.values(post_module_types_1.PostAvilableForEnum),
+        default: post_module_types_1.PostAvilableForEnum.PUBLIC,
     },
     isCommentsAllowed: { type: Boolean, default: true },
     likes: { type: [mongoose_1.default.Schema.Types.ObjectId], ref: "user" },

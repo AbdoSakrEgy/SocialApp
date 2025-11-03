@@ -7,11 +7,12 @@ const Errors_1 = require("../../utils/Errors");
 const S3_services_1 = require("../../utils/multer/S3.services");
 const nanoid_1 = require("nanoid");
 const mongoose_1 = require("mongoose");
-const post_model_1 = require("./post.model");
 const send_email_1 = require("../../utils/sendEmail/send.email");
 const createOtp_1 = require("../../utils/createOtp");
 const generateHTML_1 = require("../../utils/sendEmail/generateHTML");
 const comment_repo_1 = require("../comment/comment.repo");
+const avilabilty_conditation_1 = require("./helpers/avilabilty.conditation");
+const post_module_types_1 = require("../../types/post.module.types");
 class PostServices {
     postRepo = new post_repo_1.PostRepo();
     userRepo = new user_repo_1.UserRepo();
@@ -89,7 +90,7 @@ class PostServices {
         const post = await this.postRepo.findOne({
             filter: {
                 _id: postId,
-                $or: (0, post_model_1.avilabiltyConditation)(user),
+                $or: (0, avilabilty_conditation_1.avilabiltyConditation)(user),
             },
         });
         if (!post) {
@@ -103,11 +104,11 @@ class PostServices {
             if (postAuther?.blockList.includes(user._id)) {
                 throw new Errors_1.ApplicationExpection("You are not authorized to like this Post", 401);
             }
-            if (post.avilableFor == post_model_1.PostAvilableForEnum.FRIENDS &&
+            if (post.avilableFor == post_module_types_1.PostAvilableForEnum.FRIENDS &&
                 !postAuther?.friends.includes(user._id)) {
                 throw new Errors_1.ApplicationExpection("You are not authorized to like this post", 401);
             }
-            if (post.avilableFor == post_model_1.PostAvilableForEnum.PRIVATE &&
+            if (post.avilableFor == post_module_types_1.PostAvilableForEnum.PRIVATE &&
                 !post.tags.includes(user._id)) {
                 throw new Errors_1.ApplicationExpection("You are not authorized to like this post", 401);
             }
@@ -263,11 +264,11 @@ class PostServices {
             if (postAuther?.blockList.includes(user._id)) {
                 throw new Errors_1.ApplicationExpection("You are not authorized to get this Post", 401);
             }
-            if (post.avilableFor == post_model_1.PostAvilableForEnum.FRIENDS &&
+            if (post.avilableFor == post_module_types_1.PostAvilableForEnum.FRIENDS &&
                 !postAuther?.friends.includes(user._id)) {
                 throw new Errors_1.ApplicationExpection("You are not authorized to get this Post", 401);
             }
-            if (post.avilableFor == post_model_1.PostAvilableForEnum.PRIVATE &&
+            if (post.avilableFor == post_module_types_1.PostAvilableForEnum.PRIVATE &&
                 !post.tags.includes(user._id)) {
                 throw new Errors_1.ApplicationExpection("You are not authorized to get this Post", 401);
             }

@@ -1,6 +1,6 @@
 import { IComment, CommentModel } from "./comment.model";
 import { Model } from "mongoose";
-import { DBRepo } from "../../DB/db.repo";
+import { DBRepo } from "../../DB/repos/db.repo";
 
 export class CommentRepo extends DBRepo<IComment> {
   constructor(
